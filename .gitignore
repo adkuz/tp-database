@@ -24,3 +24,4 @@ tests/**
 cmd/forum-server
 .idea/**
 .idea
+.app
