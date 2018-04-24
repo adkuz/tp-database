@@ -25,21 +25,31 @@ func MakeUserService(pgdb *PostgresDatabase) UserService {
 }
 
 
-func (uc *UserService) GetUserIDByNickname(nickname string) *uint64 {
+func (uc *UserService) GetUserIDByNickname(nickname string) *string {
+
+	fmt.Println("UserService::GetUserIDByNickname:  nickname = '", nickname, "'")
+
 	query := fmt.Sprintf(
-		"SELECT id FROM %s WHERE LOWER(nickname) = LOWER('%s')",
+		"SELECT nickname FROM %s WHERE LOWER(nickname) = LOWER('%s')",
+		//"SELECT id FROM %s WHERE nickname = '%s'",
 		uc.tableName, nickname)
 
 	rows := uc.db.Query(query)
 
 	for rows.Next() {
-		userId := new(uint64)
-		err := rows.Scan(&userId)
+		nickname := new(string)
+		err := rows.Scan(&nickname)
 		if err != nil {
 			panic(err)
 		}
-		return userId
+
+		fmt.Println("UserService::GetUserIDByNickname:  founded nickname = '", *nickname, "'")
+
+		return nickname
 	}
+
+	fmt.Println("UserService::GetUserIDByNickname:  user not found")
+
 	return nil
 }
 
@@ -131,11 +141,12 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 func (uc *UserService) UpdateUser(user *models.User)  {
 
 
-	fmt.Println("to update {about: ",user.About,
+	/*fmt.Println("to update {about: ",user.About,
 		", email: ", user.Email,
 		", fullname: ", user.Fullname,
 		", nickname: ", user.Nickname,
 		"}")
+	*/
 
 	UPDATE_QUERY :=
 		"update " + uc.tableName + " SET about = $2, email = $3, fullname = $4 " +

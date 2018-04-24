@@ -21,17 +21,16 @@ CREATE TABLE IF NOT EXISTS users
 
 CREATE TABLE IF NOT EXISTS forums
 (
-
   id      BIGSERIAL primary key,
 
   slug    CITEXT not null unique,
 
-  author_id  BIGINT references users(id),
-
   title   CITEXT,
 
   threads INTEGER DEFAULT 0,
-  posts   INTEGER DEFAULT 0
+  posts   INTEGER DEFAULT 0,
+
+  author  VARCHAR references users(nickname)
 );
 
 CREATE TABLE IF NOT EXISTS threads

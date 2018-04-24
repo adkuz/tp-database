@@ -1,14 +1,16 @@
 package controllers
 
 import (
-	"fmt"
-	"net/http"
 	"encoding/json"
+	"fmt"
+	_ "fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 
-	"github.com/Alex-Kuz/tp-database/src/services"
 	"github.com/Alex-Kuz/tp-database/src/models"
 	"github.com/Alex-Kuz/tp-database/src/router"
+	"github.com/Alex-Kuz/tp-database/src/services"
 	resp "github.com/Alex-Kuz/tp-database/src/utils/responses"
 )
 
@@ -57,7 +59,6 @@ func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	fmt.Println("CreateForum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 	forum := models.Forum{}
 
@@ -65,13 +66,17 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 		panic(err)
 	}
 
-	authorId := UserService.GetUserIDByNickname(forum.User)
-	if authorId == nil {
+	authorNickname := UserService.GetUserIDByNickname(forum.User)
+	if authorNickname == nil {
+		fmt.Println("CreateForum:  authorId = nil")
+
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
+		return
 	}
 
-	scs, conflictForum := ForumService.AddForum(&forum, *authorId)
+	forum.User = *authorNickname
+	scs, conflictForum := ForumService.AddForum(&forum)
 
 	if scs {
 		respWriter.WriteHeader(http.StatusCreated)
@@ -80,7 +85,6 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 		respWriter.WriteHeader(http.StatusConflict)
 		writeJsonBody(&respWriter, *conflictForum)
 	}
-
 }
 
 func UserProfile(respWriter http.ResponseWriter, request *http.Request) {
@@ -151,6 +155,24 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 }
 
+func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	slug := mux.Vars(request)["slug"]
+
+	fmt.Println("ForumDetails: slug =", slug)
+
+	forum := ForumService.GetForumBySlug(slug)
+	if forum == nil {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		return
+	}
+
+	respWriter.WriteHeader(http.StatusOK)
+	writeJsonBody(&respWriter, *forum)
+}
+
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	forumAPI := make(router.ForumAPI)
@@ -184,6 +206,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      POST,
 		Pattern:     "/forum/create",
 		HandlerFunc: CreateForum,
+	}
+
+	forumAPI["ForumDetails"] = router.Route {
+		Name:        "ForumDetails",
+		Method:      GET,
+		Pattern:     "/forum/{slug}/details",
+		HandlerFunc: ForumDetails,
 	}
 
 	return forumAPI
