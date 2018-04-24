@@ -1,40 +1,47 @@
-main := src/main/main.go
-app  := server.app
+tests_dir := tests
+tester := ${tests_dir}/tech-db-forum
+report := ${tests_dir}/report.html
+
+docker_name := docker_forum_tp
+docker_tag := 1.0
 
 
-dependencies:
-	dep ensure -update
 
-vendor: dependencies
-	dep ensure
 
-easy_build:
-	go build -o ${app} ${main}
+build:
+	./scripts/build.sh
 
-build: vendor easy_build
+app_run:
+	./server.app
 
-${app}: easy_build
 
-start: ${app}
-	./${app}
+func-test:
+	./${tester} func --wait=3 --keep -u http://localhost:5000/ -r tests/report.html
 
-start_in_docker: ${app}
-	./${app} postgres://docker:docker@localhost:5432/forum_tp
-
-test:
-	./tests/tech-db-forum func -k -u http://localhost:5000/ -r tests/report.html
-
-show:
-	firefox tests/report.html
+show-report:
+	firefox tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
 
 clear:
 	rm -rf vendor ${app}
 
+docker-no-cache:
+	docker build --no-cache -t ${docker_name}:${docker_tag} -f Dockerfile ./
+
 docker:
-	docker build --no-cache -t forum-tp -f Dockerfile ./
+	docker build -t ${docker_name}:${docker_tag} -f Dockerfile ./
 
-run: forum-tp
-	docker run -p 5000:5000 -rm -it --name forum-tp
+run:
+	docker run -p 5000:5000 --rm -d -it --name forum_tp ${docker_name}:${docker_tag}
 
-forum-tp:
-	docker build -t forum-tp -f Dockerfile ./
+stop:
+	docker stop forum_tp
+
+logs:
+	docker logs forum_tp
+
+
+
+delete-container:
+	docker images
+	docker rmi ${docker_name}:${docker_tag}
+	docker images

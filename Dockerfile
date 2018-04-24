@@ -7,7 +7,7 @@ RUN apt-get -y update
 
 
 # Installing useful packages
-RUN apt-get install -y wget curl git python tree build-essential
+RUN apt-get install -y wget curl git python tree build-essential apt-utils
 
 # Installing Golang
 RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz
@@ -18,9 +18,6 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 # Installing `dep` for managing project's dependencies
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
-WORKDIR $GOPATH/src/github.com/Alex-Kuz/tp-database
-ADD . $GOPATH/src/github.com/Alex-Kuz/tp-database/
 
 # Installing postgresql
 ENV PGVER 9.6
@@ -54,16 +51,25 @@ EXPOSE 5432
 # Add VOLUMEs to allow backup of config, logs and databases
 VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
+
+#-------------------------------------------------------------------------------------
+
 # Setting up golang environment
 USER root
 
-
-RUN tree ./
-
-RUN make build
-
 EXPOSE 5000
 
+WORKDIR $GOPATH/src/github.com/Alex-Kuz/tp-database
+ADD . $GOPATH/src/github.com/Alex-Kuz/tp-database/
+
+
+RUN chmod +x ./scripts/*
+
+RUN ./scripts/build.sh
+
+
+RUN tree -L 3 ./
+
 # Main command
-CMD service postgresql start && \
-    make start_in_docker
+ENTRYPOINT ["./scripts/start_in_docker.sh"]
+CMD [""]

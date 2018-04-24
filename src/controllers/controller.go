@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -13,7 +14,8 @@ import (
 
 
 var (
-	UserService services.UserService
+	UserService   services.UserService
+	ForumService  services.ForumService
 )
 
 const (
@@ -27,7 +29,7 @@ func writeJsonBody(respWriter *http.ResponseWriter, v interface{}) {
 	}
 }
 
-// url := "/lolkek/{nickname}/shit"
+
 func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -50,6 +52,35 @@ func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 		respWriter.WriteHeader(http.StatusConflict)
 		writeJsonBody(&respWriter, usersArray)
 	}
+}
+
+func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	fmt.Println("CreateForum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
+	forum := models.Forum{}
+
+	if err := json.NewDecoder(request.Body).Decode(&forum); err != nil {
+		panic(err)
+	}
+
+	authorId := UserService.GetUserIDByNickname(forum.User)
+	if authorId == nil {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
+	}
+
+	scs, conflictForum := ForumService.AddForum(&forum, *authorId)
+
+	if scs {
+		respWriter.WriteHeader(http.StatusCreated)
+		writeJsonBody(&respWriter, *conflictForum)
+	} else {
+		respWriter.WriteHeader(http.StatusConflict)
+		writeJsonBody(&respWriter, *conflictForum)
+	}
+
 }
 
 func UserProfile(respWriter http.ResponseWriter, request *http.Request) {
@@ -80,10 +111,29 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userInfo := models.User{}
-	if err := json.NewDecoder(request.Body).Decode(&userInfo); err != nil {
-		panic(err)
+	var userMap map[string]string
+	var userInfo models.User
+
+	json.NewDecoder(request.Body).Decode(&userMap)
+
+	if value, ok := userMap["email"]; ok {
+		userInfo.Email = value
+	} else {
+		userInfo.Email = user.Email
 	}
+
+	if value, ok := userMap["about"]; ok {
+		userInfo.About = value
+	} else {
+		userInfo.About = user.About
+	}
+
+	if value, ok := userMap["fullname"]; ok {
+		userInfo.Fullname = value
+	} else {
+		userInfo.Fullname = user.Fullname
+	}
+
 	userInfo.Nickname = nickname
 
 	// Конфликт может возникнуть только по значению email
@@ -106,6 +156,7 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	forumAPI := make(router.ForumAPI)
 
 	UserService = services.MakeUserService(pgdb)
+	ForumService = services.MakeForumService(pgdb)
 
 	forumAPI["CreateUser"] = router.Route {
 		Name:        "CreateUser",
@@ -126,6 +177,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      POST,
 		Pattern:     "/user/{nickname}/profile",
 		HandlerFunc: UpdateUser,
+	}
+
+	forumAPI["CreateForum"] = router.Route {
+		Name:        "CreateForum",
+		Method:      POST,
+		Pattern:     "/forum/create",
+		HandlerFunc: CreateForum,
 	}
 
 	return forumAPI

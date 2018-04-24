@@ -58,7 +58,8 @@ func readConfig(dbLine *string) services.Config {
 
 	fmt.Println(*dbLine)
 
-	reg := `(?P<db>[a-zA-Z][a-zA-Z0-9]*)://(?P<username>[a-zA-Z0-9_]+):(?P<password>[a-zA-Z0-9_]+)@(?P<host>[a-zA-Z][a-zA-Z0-9]*):(?P<port>[0-9]{4})/(?P<db_name>[a-zA-Z][a-zA-Z0-9]*)`
+	reg :=
+		`(?P<db>[a-zA-Z][a-zA-Z0-9]*)://(?P<username>[a-zA-Z0-9_]+):(?P<password>[a-zA-Z0-9_]+)@(?P<host>[a-zA-Z][a-zA-Z0-9]*):(?P<port>[0-9]{4})/(?P<db_name>[a-zA-Z_][a-z_A-Z0-9]*)`
 	paramsMap := getParams(reg, *dbLine)
 
 	fmt.Println(paramsMap)
@@ -71,7 +72,6 @@ func readConfig(dbLine *string) services.Config {
 		DBName:   paramsMap["db_name"],
 	}
 }
-
 
 
 func init() {
@@ -98,6 +98,8 @@ func init() {
 	fmt.Println("Creating router...")
 	ForumRouter = router.CreateRouter(&forumAPI)
 }
+
+
 
 func main() {
 	fmt.Println("Starting server...")
