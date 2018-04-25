@@ -9,12 +9,13 @@ import (
 	"github.com/go-openapi/validate"
 )
 
+//type ThreadDateTime *strfmt.DateTime
 
 type Thread struct {
 
 	Author  string `json:"author"`
 
-	Created *strfmt.DateTime `json:"created,omitempty"`
+	Created string `json:"created,omitempty"`
 
 	Forum   string `json:"forum,omitempty"`
 

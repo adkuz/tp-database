@@ -33,35 +33,19 @@ CREATE TABLE IF NOT EXISTS forums
   author  VARCHAR references users(nickname)
 );
 
-CREATE TABLE IF NOT EXISTS threads
+CREATE TABLE threads
 (
   id         BIGSERIAL PRIMARY KEY,
-  slug       TEXT UNIQUE,
-  created_on TIMESTAMP,
+  slug       CITEXT  not null UNIQUE,
+
+  created    TIMESTAMP WITH TIME ZONE,
+
   message    TEXT,
   title      TEXT,
-  authorid   BIGINT REFERENCES users (id),
-  forumid    BIGINT REFERENCES forums (id)
+
+  author     VARCHAR REFERENCES users (nickname),
+  forum      CITEXT REFERENCES forums(slug),
+
+  votes      BIGINT DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS messages
-(
-  id         BIGSERIAL PRIMARY KEY,
-  created_on TIMESTAMP,
-  message    TEXT,
-  isedited   BOOLEAN,
-  authorid   BIGINT REFERENCES users (id),
-  parentid   BIGINT REFERENCES messages (id) DEFAULT 0,
-  threadid   BIGINT REFERENCES threads (id),
-  forumid    BIGINT REFERENCES forums (id),
-  parenttree BIGINT[] DEFAULT '{0}'
-);
-
-CREATE TABLE IF NOT EXISTS votes
-(
-  voice      INT CHECK (voice in (1, -1)),
-  userid     BIGINT REFERENCES users (id),
-  threadid   BIGINT REFERENCES threads (id),
-
-  CONSTRAINT unique_vote UNIQUE (userid, threadid)
-);

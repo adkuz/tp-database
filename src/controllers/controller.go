@@ -18,6 +18,7 @@ import (
 var (
 	UserService   services.UserService
 	ForumService  services.ForumService
+	ThreadService services.ThreadService
 )
 
 const (
@@ -173,12 +174,27 @@ func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 	writeJsonBody(&respWriter, *forum)
 }
 
+func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	slug := mux.Vars(request)["slug"]
+
+	thread := models.Thread{}
+	if err := json.NewDecoder(request.Body).Decode(&thread); err != nil {
+		panic(err)
+	}
+	thread.Slug = slug
+
+	fmt.Println("\nCreateThread: thread =", thread)
+}
+
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	forumAPI := make(router.ForumAPI)
 
 	UserService = services.MakeUserService(pgdb)
 	ForumService = services.MakeForumService(pgdb)
+	ThreadService = services.MakeThreadService(pgdb)
 
 	forumAPI["CreateUser"] = router.Route {
 		Name:        "CreateUser",
@@ -213,6 +229,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      GET,
 		Pattern:     "/forum/{slug}/details",
 		HandlerFunc: ForumDetails,
+	}
+
+	forumAPI["CreateThread"] = router.Route {
+		Name:        "CreateThread",
+		Method:      POST,
+		Pattern:     "/forum/{slug}/create",
+		HandlerFunc: CreateThread,
 	}
 
 	return forumAPI

@@ -9,14 +9,14 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-type DateTime *strfmt.DateTime
+type PostDateTime *strfmt.DateTime
 
 
 type Post struct {
 
 	Author  string   `json:"author"`
 
-	Created DateTime `json:"created,omitempty"`
+	Created PostDateTime `json:"created,omitempty"`
 
 	Forum   string   `json:"forum,omitempty"`
 
