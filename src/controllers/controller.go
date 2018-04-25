@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -187,6 +188,30 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	}
 	thread.Forum = slug
 
+	if author := UserService.GetUserByNickname(thread.Author); author == nil {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Thread author not found"})
+		return
+	}
+
+	forumSlug := ForumService.SlugBySlug(thread.Forum)
+	if forumSlug == nil {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		return
+	}
+
+	thread.Forum = *forumSlug
+
+	if thread.Slug != "" {
+		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+		if anotherThread := ThreadService.GetThreadBySlug(thread.Slug); anotherThread != nil {
+			respWriter.WriteHeader(http.StatusConflict)
+			writeJsonBody(&respWriter, resp.Message{"Thread with same slug already exists"})
+			return
+		}
+	}
+
 	if len(thread.Created) == 0 {
 		thread.Created = time.Now().UTC().Format(time.RFC3339)
 		fmt.Println("\nCreateThread: thread.Created =", thread.Created)
@@ -196,12 +221,44 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("CreateThread: thread:", thread)
 
 	ThreadService.AddThread(&thread)
+	ForumService.IncThreadsCountBySlug(slug)
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, thread)
 }
 
+func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
+	slug := mux.Vars(request)["slug"]
+
+	forum := ForumService.GetForumBySlug(slug)
+	if forum == nil {
+		fmt.Println("CreateForum: forum with slug '", slug, "' not found")
+
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
+		return
+	}
+
+	limit := request.URL.Query().Get("limit")
+	since := request.URL.Query().Get("since")
+	descRef := request.URL.Query().Get("desc")
+
+	desc := false
+	if descRef != "" {
+		var err error
+		desc, err = strconv.ParseBool(descRef)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	_, threads := ThreadService.SelectThreads(slug, limit, since, desc)
+
+	respWriter.WriteHeader(http.StatusOK)
+	writeJsonBody(&respWriter, threads)
+}
 
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
@@ -251,6 +308,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      POST,
 		Pattern:     "/forum/{slug}/create",
 		HandlerFunc: CreateThread,
+	}
+
+	forumAPI["ForumThreads"] = router.Route {
+		Name:        "ForumThreads",
+		Method:      GET,
+		Pattern:     "/forum/{slug}/threads",
+		HandlerFunc: ForumThreads,
 	}
 
 	return forumAPI

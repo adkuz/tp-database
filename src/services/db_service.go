@@ -17,7 +17,10 @@ type Database interface {
 	Result()
 	Close()
 	Query(string)
+	QueryRow(query string, args ...interface{})
 }
+
+
 
 type Config struct {
 	// Address that locates our postgres instance
@@ -42,6 +45,10 @@ func MakeConnectionString(config Config) string {
 	return fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		config.User, config.Password, config.DBName, config.Host, config.Port)
+}
+
+func (pgdb *PostgresDatabase) QueryRow (query string, args ...interface{}) *sql.Row {
+	return pgdb.Connection.QueryRow(query, args...)
 }
 
 func (pgdb *PostgresDatabase) Prepare(query string) (*sql.Stmt, error) {
