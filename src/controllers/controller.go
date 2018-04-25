@@ -74,8 +74,8 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
 		return
 	}
-
 	forum.User = *authorNickname
+
 	scs, conflictForum := ForumService.AddForum(&forum)
 
 	if scs {

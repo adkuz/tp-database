@@ -19,7 +19,7 @@ func-test:
 	./${tester} func --wait=3 --keep -u http://localhost:5000/ -r tests/report.html
 
 show-report:
-	firefox tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
+	firefox file://$(shell pwd)/tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
 
 clear:
 	rm -rf vendor ${app}

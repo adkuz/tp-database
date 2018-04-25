@@ -140,7 +140,6 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 
 func (uc *UserService) UpdateUser(user *models.User)  {
 
-
 	/*fmt.Println("to update {about: ",user.About,
 		", email: ", user.Email,
 		", fullname: ", user.Fullname,
@@ -150,7 +149,7 @@ func (uc *UserService) UpdateUser(user *models.User)  {
 
 	UPDATE_QUERY :=
 		"update " + uc.tableName + " SET about = $2, email = $3, fullname = $4 " +
-			"WHERE nickname = $1;"
+			"WHERE LOWER(nickname) = LOWER($1);"
 
 	updateQuery, err := uc.db.Prepare(UPDATE_QUERY)
 	if err != nil {
