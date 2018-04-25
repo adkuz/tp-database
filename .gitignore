@@ -18,7 +18,7 @@
 vendor/**
 
 # Testing directory
-tests/**
+tests/*.html
 
 # Executable
 cmd/forum-server
