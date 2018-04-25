@@ -114,7 +114,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 	fmt.Println("GetThreadBySlug: query start")
 
 	query := fmt.Sprintf(
-		"SELECT slug, author, forum, created, title, message, votes FROM %s WHERE LOWER(slug) = LOWER('%s');",
+		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE LOWER(slug) = LOWER('%s');",
 			ts.tableName, slug)
 
 	fmt.Println("GetThreadBySlug: query:", query)
@@ -125,7 +125,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 	for rows.Next() {
 		thread := new(models.Thread)
-		err := rows.Scan(&thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
+		err := rows.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
 			&thread.Title, &thread.Message, &thread.Votes)
 		if err != nil {
 			fmt.Println(err)
@@ -136,3 +136,32 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 	return nil
 }
+
+func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
+
+	fmt.Println("GetThreadById: query start")
+
+	query := fmt.Sprintf(
+		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE id = %s;",
+		ts.tableName, id)
+
+	fmt.Println("GetThreadBySlug: query:", query)
+	fmt.Println("-----------------------------start------------------------------####################")
+
+	rows := ts.db.Query(query)
+	fmt.Println("------------------------------end-------------------------------####################")
+
+	for rows.Next() {
+		thread := new(models.Thread)
+		err := rows.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
+			&thread.Title, &thread.Message, &thread.Votes)
+		if err != nil {
+			fmt.Println(err)
+			panic(err)
+		}
+		return thread
+	}
+
+	return nil
+}
+

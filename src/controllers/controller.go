@@ -22,6 +22,7 @@ var (
 	UserService   services.UserService
 	ForumService  services.ForumService
 	ThreadService services.ThreadService
+	PostService   services.PostService
 )
 
 const (
@@ -207,7 +208,7 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		if anotherThread := ThreadService.GetThreadBySlug(thread.Slug); anotherThread != nil {
 			respWriter.WriteHeader(http.StatusConflict)
-			writeJsonBody(&respWriter, resp.Message{"Thread with same slug already exists"})
+			writeJsonBody(&respWriter, *anotherThread)
 			return
 		}
 	}
@@ -260,6 +261,46 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 	writeJsonBody(&respWriter, threads)
 }
 
+func ThreadDetails(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	slug := mux.Vars(request)["slug"]
+
+	fmt.Println("ThreadDetails: slug =", slug)
+
+	thread := ThreadService.GetThreadBySlug(slug)
+	if thread == nil {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		return
+	}
+
+	respWriter.WriteHeader(http.StatusOK)
+	writeJsonBody(&respWriter, *thread)
+}
+
+func CreatePost(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	threadSlug := mux.Vars(request)["slug_or_id"]
+
+	var thread *models.Thread
+	threadId, err := strconv.ParseUint(threadSlug, 10, 64)
+	if err != nil {
+		thread = ThreadService.GetThreadById(threadId)
+	} else {
+		thread = ThreadService.GetThreadBySlug(threadSlug)
+	}
+
+	if thread == nil {
+		fmt.Println("CreatePost: forum with slug_or_id '", threadSlug, "' not found")
+
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		return
+	}
+
+}
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	forumAPI := make(router.ForumAPI)
@@ -267,6 +308,7 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	UserService = services.MakeUserService(pgdb)
 	ForumService = services.MakeForumService(pgdb)
 	ThreadService = services.MakeThreadService(pgdb)
+	PostService = services.MakePostService(pgdb)
 
 	forumAPI["CreateUser"] = router.Route {
 		Name:        "CreateUser",
@@ -315,6 +357,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      GET,
 		Pattern:     "/forum/{slug}/threads",
 		HandlerFunc: ForumThreads,
+	}
+
+	forumAPI["ThreadDetails"] = router.Route {
+		Name:        "ThreadDetails",
+		Method:      GET,
+		Pattern:     "/thread/{slug}/details",
+		HandlerFunc: ThreadDetails,
 	}
 
 	return forumAPI
