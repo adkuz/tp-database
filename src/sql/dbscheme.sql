@@ -36,12 +36,12 @@ CREATE TABLE IF NOT EXISTS forums
 CREATE TABLE threads
 (
   id         BIGSERIAL PRIMARY KEY,
-  slug       CITEXT  not null UNIQUE,
+  slug       CITEXT unique,
 
   created    TIMESTAMP WITH TIME ZONE,
 
-  message    TEXT,
-  title      TEXT,
+  message    TEXT default '',
+  title      TEXT default '',
 
   author     VARCHAR REFERENCES users (nickname),
   forum      CITEXT REFERENCES forums(slug),

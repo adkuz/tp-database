@@ -19,7 +19,7 @@ type Thread struct {
 
 	Forum   string `json:"forum,omitempty"`
 
-	ID      int32  `json:"id,omitempty"`
+	ID      int64  `json:"id,omitempty"`
 
 	Message string `json:"message"`
 
@@ -28,7 +28,7 @@ type Thread struct {
 
 	Title   string `json:"title"`
 
-	Votes   int32  `json:"votes,omitempty"`
+	Votes   int64  `json:"votes,omitempty"`
 }
 
 

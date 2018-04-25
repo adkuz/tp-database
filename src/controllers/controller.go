@@ -5,8 +5,10 @@ import (
 	"fmt"
 	_ "fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
+	_ "github.com/joeshaw/iso8601"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
 	"github.com/Alex-Kuz/tp-database/src/router"
@@ -183,10 +185,23 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	if err := json.NewDecoder(request.Body).Decode(&thread); err != nil {
 		panic(err)
 	}
-	thread.Slug = slug
+	thread.Forum = slug
 
-	fmt.Println("\nCreateThread: thread =", thread)
+	if len(thread.Created) == 0 {
+		thread.Created = time.Now().UTC().Format(time.RFC3339)
+		fmt.Println("\nCreateThread: thread.Created =", thread.Created)
+	}
+
+
+	fmt.Println("CreateThread: thread:", thread)
+
+	ThreadService.AddThread(&thread)
+
+	respWriter.WriteHeader(http.StatusCreated)
+	writeJsonBody(&respWriter, thread)
 }
+
+
 
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {

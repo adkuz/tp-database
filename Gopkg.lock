@@ -99,6 +99,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/joeshaw/iso8601"
+  packages = ["."]
+  revision = "861d1ce636d058f8544e10ee3d2371e061484775"
+
+[[projects]]
+  branch = "master"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -171,6 +177,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "69d8b3f636389320d9cd39193ecfc0f9dfb6fb582102ad53b443c2c2921f1275"
+  inputs-digest = "50486ed6e5629265360687b42b5d5e60c3677d9622c932988fd992962c9639c3"
   solver-name = "gps-cdcl"
   solver-version = 1
