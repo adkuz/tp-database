@@ -60,6 +60,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		limitStr = "LIMIT " + limit
 	}
 
+
 	comp := " >= "
 	order := "ORDER BY th.created "
 	if desc {
@@ -79,7 +80,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		offsetStr = "AND th.created " + comp + " '" + since + "'"
 	}
 
-
+	
 
 	query := fmt.Sprintf(
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
