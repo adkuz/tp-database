@@ -34,7 +34,6 @@ type Post struct {
 
 type PostsArray []Post
 
-
 func (m *Post) Validate(formats strfmt.Registry) error {
 	var res []error
 

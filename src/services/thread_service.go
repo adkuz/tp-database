@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
@@ -143,7 +144,7 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 	query := fmt.Sprintf(
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE id = %s;",
-		ts.tableName, id)
+		ts.tableName, strconv.FormatUint(id, 10))
 
 	fmt.Println("GetThreadBySlug: query:", query)
 	fmt.Println("-----------------------------start------------------------------####################")

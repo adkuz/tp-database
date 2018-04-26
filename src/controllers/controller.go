@@ -183,6 +183,9 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 
 	slug := mux.Vars(request)["slug"]
 
+	fmt.Println("\n----------------------------------------------------------------------------")
+
+
 	thread := models.Thread{}
 	if err := json.NewDecoder(request.Body).Decode(&thread); err != nil {
 		panic(err)
@@ -205,7 +208,6 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	thread.Forum = *forumSlug
 
 	if thread.Slug != "" {
-		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		if anotherThread := ThreadService.GetThreadBySlug(thread.Slug); anotherThread != nil {
 			respWriter.WriteHeader(http.StatusConflict)
 			writeJsonBody(&respWriter, *anotherThread)
@@ -219,13 +221,17 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 
-	fmt.Println("CreateThread: thread:", thread)
+	fmt.Println("CreateThread: thread{slug, created, author}:",
+		thread.Slug, thread.Created, thread.Author)
 
 	ThreadService.AddThread(&thread)
 	ForumService.IncThreadsCountBySlug(slug)
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, thread)
+
+	fmt.Println("----------------------------------------------------------------------------\n")
+
 }
 
 func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
@@ -264,11 +270,16 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 func ThreadDetails(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	slug := mux.Vars(request)["slug"]
+	threadSlug := mux.Vars(request)["slug_or_id"]
 
-	fmt.Println("ThreadDetails: slug =", slug)
+	var thread *models.Thread
+	threadId, err := strconv.ParseUint(threadSlug, 10, 64)
+	if err == nil {
+		thread = ThreadService.GetThreadById(threadId)
+	} else {
+		thread = ThreadService.GetThreadBySlug(threadSlug)
+	}
 
-	thread := ThreadService.GetThreadBySlug(slug)
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
@@ -279,27 +290,52 @@ func ThreadDetails(respWriter http.ResponseWriter, request *http.Request) {
 	writeJsonBody(&respWriter, *thread)
 }
 
-func CreatePost(respWriter http.ResponseWriter, request *http.Request) {
+func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	threadSlug := mux.Vars(request)["slug_or_id"]
 
 	var thread *models.Thread
 	threadId, err := strconv.ParseUint(threadSlug, 10, 64)
-	if err != nil {
+	if err == nil {
 		thread = ThreadService.GetThreadById(threadId)
 	} else {
 		thread = ThreadService.GetThreadBySlug(threadSlug)
 	}
 
+	fmt.Println("\n----------------------------------------------------------------------------")
+
+	fmt.Println("CreatePost: slug_or_id", threadSlug, err)
+
 	if thread == nil {
 		fmt.Println("CreatePost: forum with slug_or_id '", threadSlug, "' not found")
 
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		fmt.Println("\n----------------------------------------------------------------------------")
+
 		return
 	}
 
+	postsArray := make(models.PostsArray, 0)
+
+	if err := json.NewDecoder(request.Body).Decode(&postsArray); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("CreatePost: posts:")
+	for i := 0; i < len(postsArray); i++ {
+		fmt.Println("\t", i, ":", postsArray[i])
+	}
+
+	if len(postsArray) == 0 {
+		respWriter.WriteHeader(http.StatusCreated)
+		writeJsonBody(&respWriter, postsArray)
+		fmt.Println("\n----------------------------------------------------------------------------")
+		return
+	}
+
+	fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
@@ -362,8 +398,15 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 	forumAPI["ThreadDetails"] = router.Route {
 		Name:        "ThreadDetails",
 		Method:      GET,
-		Pattern:     "/thread/{slug}/details",
+		Pattern:     "/thread/{slug_or_id}/details",
 		HandlerFunc: ThreadDetails,
+	}
+
+	forumAPI["CreatePosts"] = router.Route {
+		Name:        "CreatePosts",
+		Method:      POST,
+		Pattern:     "/thread/{slug_or_id}/create",
+		HandlerFunc: CreatePosts,
 	}
 
 	return forumAPI
