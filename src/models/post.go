@@ -16,19 +16,21 @@ type Post struct {
 
 	Author  string   `json:"author"`
 
-	Created PostDateTime `json:"created,omitempty"`
+	Created string   `json:"created,omitempty"`
 
 	Forum   string   `json:"forum,omitempty"`
 
-	ID      int64    `json:"id,omitempty"`
+	ID      uint64   `json:"id,omitempty"`
 
 	IsEdited bool    `json:"isEdited,omitempty"`
 
 	Message  string  `json:"message"`
 
-	Parent   int64   `json:"parent,omitempty"`
+	Parent   uint64  `json:"parent,omitempty"`
 
-	Thread   int32   `json:"thread,omitempty"`
+	Thread   uint64  `json:"thread,omitempty"`
+
+	Path     []uint64  `json:",omitempty"`
 }
 
 

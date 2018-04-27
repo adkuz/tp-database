@@ -231,7 +231,6 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	writeJsonBody(&respWriter, thread)
 
 	fmt.Println("----------------------------------------------------------------------------\n")
-
 }
 
 func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
@@ -308,11 +307,11 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("CreatePost: slug_or_id", threadSlug, err)
 
 	if thread == nil {
-		fmt.Println("CreatePost: forum with slug_or_id '", threadSlug, "' not found")
+		fmt.Println("CreatePost: thread with slug_or_id '", threadSlug, "' not found")
 
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
-		fmt.Println("\n----------------------------------------------------------------------------")
+		fmt.Println("----------------------------------------------------------------------------\n")
 
 		return
 	}
@@ -328,14 +327,80 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		fmt.Println("\t", i, ":", postsArray[i])
 	}
 
-	if len(postsArray) == 0 {
-		respWriter.WriteHeader(http.StatusCreated)
-		writeJsonBody(&respWriter, postsArray)
-		fmt.Println("\n----------------------------------------------------------------------------")
+	parents := PostService.RequiredParents(postsArray)
+
+	for i := 0; i < len(parents); i++ {
+		if parent := PostService.GetPostById(parents[i]); parent == nil {
+			respWriter.WriteHeader(http.StatusConflict)
+			writeJsonBody(&respWriter, resp.Message{"Parents are not found"})
+			return
+		}
+	}
+
+	timeMoment := time.Now().UTC().Format(time.RFC3339)
+	threadId = thread.ID
+	forumSlug := thread.Forum
+	for i := 0; i < len(postsArray); i++ {
+		postsArray[i].Created = timeMoment
+		postsArray[i].Thread = threadId
+		postsArray[i].Forum = forumSlug
+
+		fmt.Println("\t", i, ":", postsArray[i])
+
+		if user := UserService.GetUserByNickname(postsArray[i].Author); user == nil {
+			respWriter.WriteHeader(http.StatusNotFound)
+			writeJsonBody(&respWriter, resp.Message{"Author are not found"})
+			return
+		}
+
+		PostService.AddPost(&postsArray[i])
+	}
+
+	////////////////////////////
+
+	respWriter.WriteHeader(http.StatusCreated)
+	writeJsonBody(&respWriter, postsArray)
+
+	fmt.Println("----------------------------------------------------------------------------\n")
+}
+
+func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
+	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	threadSlug := mux.Vars(request)["slug_or_id"]
+
+	var thread *models.Thread
+	threadId, err := strconv.ParseUint(threadSlug, 10, 64)
+	if err == nil {
+		thread = ThreadService.GetThreadById(threadId)
+	} else {
+		thread = ThreadService.GetThreadBySlug(threadSlug)
+	}
+
+	fmt.Println("\n----------------------------------------------------------------------------")
+
+	fmt.Println("ThreadVote: slug_or_id", threadSlug, err)
+
+	if thread == nil {
+		fmt.Println("ThreadVote: thread with slug_or_id '", threadSlug, "' not found")
+
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		fmt.Println("----------------------------------------------------------------------------\n")
+
 		return
 	}
 
-	fmt.Println("----------------------------------------------------------------------------\n")
+	var vote models.Vote
+	if err := json.NewDecoder(request.Body).Decode(&vote); err != nil {
+		panic(err)
+	}
+
+
+	thread = ThreadService.Vote(thread, vote)
+
+	respWriter.WriteHeader(http.StatusOK)
+	writeJsonBody(&respWriter, thread)
 }
 
 func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
@@ -407,6 +472,13 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 		Method:      POST,
 		Pattern:     "/thread/{slug_or_id}/create",
 		HandlerFunc: CreatePosts,
+	}
+
+	forumAPI["ThreadVote"] = router.Route {
+		Name:        "ThreadVote",
+		Method:      POST,
+		Pattern:     "/thread/{slug_or_id}/vote",
+		HandlerFunc: ThreadVote,
 	}
 
 	return forumAPI

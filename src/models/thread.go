@@ -19,7 +19,7 @@ type Thread struct {
 
 	Forum   string `json:"forum,omitempty"`
 
-	ID      int64  `json:"id,omitempty"`
+	ID      uint64 `json:"id,omitempty"`
 
 	Message string `json:"message"`
 

@@ -7,7 +7,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"os"
-	"strings"
 )
 
 
@@ -95,6 +94,10 @@ func (pgdb *PostgresDatabase) Setup(filename string) {
 		panic(err)
 	}
 
+	command := string(bs)
+	pgdb.Execute(command)
+
+	/*
 	commands := strings.Split(string(bs), ";")
 	for i := range commands {
 		if commands[i] != "" {
@@ -102,6 +105,7 @@ func (pgdb *PostgresDatabase) Setup(filename string) {
 			pgdb.Execute(commands[i] + ";")
 		}
 	}
+	*/
 }
 
 func (pgdb *PostgresDatabase) Execute(query string, args ...interface{}) sql.Result {

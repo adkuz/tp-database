@@ -46,7 +46,7 @@ CREATE TABLE threads
   author     VARCHAR REFERENCES users (nickname),
   forum      CITEXT REFERENCES forums(slug),
 
-  votes      BIGINT DEFAULT 0
+  votes      INTEGER DEFAULT 0
 );
 
 create table if not exists posts
@@ -57,11 +57,36 @@ create table if not exists posts
 
   is_edited boolean default FALSE,
 
-  parent    integer,
-  path      bigint array,
+  parent    bigint,
+  tree_path bigint array,
 
   author    varchar not null references users(nickname),
   forum     CITEXT references forums(slug),
   thread    bigint references threads(id)
 );
+
+
+CREATE TABLE votes
+(
+  id        bigserial   NOT NULL PRIMARY KEY,
+  username  VARCHAR     NOT NULL REFERENCES users(nickname),
+  thread    INTEGER     NOT NULL REFERENCES threads(id),
+  voice     INTEGER,
+
+  UNIQUE(username, thread)
+);
+
+
+CREATE FUNCTION fix_path() RETURNS trigger AS $fix_path$
+DECLARE
+  parent_id BIGINT;
+BEGIN
+  parent_id := new.parent;
+  new.tree_path := (SELECT tree_path from posts WHERE id = parent_id) || ARRAY[new.id];
+  RETURN new;
+END;
+$fix_path$ LANGUAGE plpgsql;
+
+CREATE TRIGGER fix_path BEFORE INSERT OR UPDATE ON posts
+  FOR EACH ROW EXECUTE PROCEDURE fix_path();
 

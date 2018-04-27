@@ -16,7 +16,7 @@ app_run:
 
 
 func-test:
-	./${tester} func --wait=7 --keep -u http://localhost:5000/ -r tests/report.html
+	./${tester} func --wait=10 -u http://localhost:5000/ -r tests/report.html
 
 show-report:
 	firefox file://$(shell pwd)/tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
@@ -32,6 +32,9 @@ docker:
 
 run:
 	docker run -p 5000:5000 --rm -d -it --name forum_tp ${docker_name}:${docker_tag}
+
+run-no-d:
+	docker run -p 5000:5000 --rm -it --name forum_tp ${docker_name}:${docker_tag}
 
 stop:
 	docker stop forum_tp
