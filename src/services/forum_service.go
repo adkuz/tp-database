@@ -24,6 +24,7 @@ func (fs *ForumService) GetForumBySlug(slug string) *models.Forum {
 			fs.tableName, slug)
 
 	rows := fs.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		forum := new(models.Forum)
@@ -42,6 +43,7 @@ func (fs *ForumService) SlugBySlug(slug string) *string {
 		fs.tableName, slug)
 
 	rows := fs.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		str := new(string)
@@ -74,6 +76,7 @@ func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
 		fmt.Println("AddForum:  error:", err.Error())
 		panic(err)
 	}
+
 
 	return true
 }

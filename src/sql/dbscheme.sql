@@ -60,6 +60,8 @@ create table if not exists posts
   parent    bigint,
   tree_path bigint array,
 
+  message   text not null,
+
   author    varchar not null references users(nickname),
   forum     CITEXT references forums(slug),
   thread    bigint references threads(id)

@@ -35,6 +35,7 @@ func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 		uc.tableName, nickname)
 
 	rows := uc.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		nickname := new(string)
@@ -59,6 +60,7 @@ func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 		uc.tableName, nickname)
 
 	rows := uc.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -77,6 +79,7 @@ func (uc *UserService) GetUserByEmail(email string) *models.User {
 		uc.tableName, email)
 
 	rows := uc.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -97,6 +100,7 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 			uc.tableName, email, nickname)
 
 	rows := uc.db.Query(query)
+	defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)

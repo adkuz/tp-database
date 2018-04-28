@@ -113,7 +113,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 	if len(threads) == 0 {
 		return false, threads
 	}
-
+	rows.Close()
 	return true, threads
 }
 
@@ -141,7 +141,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 		}
 		return thread
 	}
-
+	rows.Close()
 	return nil
 }
 
@@ -170,6 +170,8 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 		return thread
 	}
 
+	rows.Close()
+
 	return nil
 }
 
@@ -182,14 +184,10 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 		addVoteStr = "- 1"
 	}
 
-	query := fmt.Sprintf(
-		"UPDATE %s SET votes = votes %s WHERE id = %s returning votes;",
-		ts.tableName, addVoteStr, strconv.FormatUint(thread.ID, 10))
-
 	voice, voteId := ts.getVote(vote.Nickname, thread.ID)
 	if voice != nil {
 		if *voice == vote.Voice {
-			fmt.Println("Vote: this vote is existed:", query)
+			fmt.Println("Vote: this vote is existed")
 			return thread
 		} else {
 			voiceUpdate := "UPDATE votes SET voice = $1 WHERE id = $2;"
@@ -218,6 +216,11 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 			panic(err)
 		}
 	}
+
+
+	query := fmt.Sprintf(
+		"UPDATE %s SET votes = votes %s WHERE id = %s returning votes;",
+		ts.tableName, addVoteStr, strconv.FormatUint(thread.ID, 10))
 
 	fmt.Println("-----------------------------start-2-----------------------------####################")
 	err := ts.db.QueryRow(query).Scan(&thread.Votes)
@@ -254,5 +257,7 @@ func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uin
 		}
 		return voice, id
 	}
+
+	rows.Close()
 	return nil, nil
 }
