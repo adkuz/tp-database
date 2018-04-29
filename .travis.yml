@@ -1,11 +1,14 @@
 language: go
 sudo: true
+
 services:
   - docker
 
 install:
+  - sudo apt-get install build-essential
   - make docker
   - make run
+
 script:
   - make func-test
 
