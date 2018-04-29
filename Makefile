@@ -19,7 +19,7 @@ func-test:
 	./${tester} func --wait=10 --keep -u http://localhost:5000/ -r tests/report.html
 
 func-test-no-k:
-	./${tester} func --wait=10 -u http://localhost:5000/ -r tests/report.html
+	./${tester} func --wait=50 -u http://localhost:5000/ -r tests/report.html
 
 show-report:
 	firefox file://$(shell pwd)/tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
@@ -44,6 +44,7 @@ stop:
 
 logs:
 	docker logs forum_tp
+
 
 
 

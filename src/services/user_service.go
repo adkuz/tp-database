@@ -24,6 +24,14 @@ func MakeUserService(pgdb *PostgresDatabase) UserService {
 	return UserService{db: pgdb, tableName: "users"}
 }
 
+func (uc *UserService) GetDB() *PostgresDatabase {
+	return uc.db
+}
+
+func (us *UserService) TableName() string {
+	return us.tableName
+}
+
 
 func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 

@@ -12,12 +12,12 @@ import (
 
 type Forum struct {
 
-	Posts   int64  `json:"posts,omitempty"`
+	Posts   uint64  `json:"posts,omitempty"`
 
 	// Pattern: ^(\d|\w|-|_)*(\w|-|_)(\d|\w|-|_)*$
 	Slug    string `json:"slug"`
 
-	Threads int32  `json:"threads,omitempty"`
+	Threads uint32  `json:"threads,omitempty"`
 
 	Title   string `json:"title"`
 

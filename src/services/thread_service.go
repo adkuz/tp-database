@@ -18,7 +18,9 @@ func MakeThreadService(pgdb *PostgresDatabase) ThreadService {
 }
 
 
-
+func (ts *ThreadService) TableName() string {
+	return ts.tableName
+}
 
 func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread) {
 
@@ -52,9 +54,45 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 		panic(err)
 	}
 
+	insertQueryForumUsers :=
+		"insert into forum_users (username, forum) select $1, $2 " +
+			"where not exists (select * from forum_users where lower(username) = lower($3) and lower(forum) = lower($4));"
+
+	insertQueryUserForum, err := ts.db.Prepare(insertQueryForumUsers)
+	defer insertQueryUserForum.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = insertQueryUserForum.Exec(thread.Author, thread.Forum, thread.Author, thread.Forum)
+	if err != nil {
+		fmt.Println("AddForum:  error:", err.Error())
+		panic(err)
+	}
+
 	fmt.Println("AddForum: id:", thread.ID)
 
 	return true, thread
+}
+
+func (ts *ThreadService) UpdateThread(thread *models.Thread) *models.Thread {
+
+	update :=
+		"update " + ts.tableName + " SET title = $2, message = $3 " +
+			"WHERE id = $1;"
+
+	updateQuery, err := ts.db.Prepare(update)
+	if err != nil {
+		panic(err)
+	}
+	defer updateQuery.Close()
+
+	_, err = updateQuery.Exec(thread.ID, thread.Title, thread.Message)
+	if err != nil {
+		panic(err)
+	}
+
+	return thread
 }
 
 func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bool, []models.Thread) {
@@ -98,6 +136,8 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 
 
 	rows := ts.db.Query(query)
+	defer rows.Close()
+
 	threads := make([]models.Thread, 0)
 
 	for rows.Next() {
@@ -113,7 +153,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 	if len(threads) == 0 {
 		return false, threads
 	}
-	rows.Close()
+
 	return true, threads
 }
 
@@ -129,6 +169,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 	fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
+	defer rows.Close()
 	fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
@@ -141,7 +182,6 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 		}
 		return thread
 	}
-	rows.Close()
 	return nil
 }
 
@@ -157,6 +197,7 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 	fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
+	defer rows.Close()
 	fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
@@ -169,9 +210,6 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 		}
 		return thread
 	}
-
-	rows.Close()
-
 	return nil
 }
 
@@ -195,8 +233,8 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 			fmt.Println("<< Vote  update: vote, thread.id:", vote, thread.ID)
 			fmt.Println("-----------------------------start------------------------------####################")
 
-			ts.db.Query(voiceUpdate, vote.Voice, voteId)
-
+			rows := ts.db.Query(voiceUpdate, vote.Voice, voteId)
+			defer rows.Close()
 			addVoteStr = "+ 2"
 			if vote.Voice == -1 {
 				addVoteStr = "- 2"
@@ -245,6 +283,8 @@ func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uin
 	fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
+	defer rows.Close()
+
 	fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
@@ -258,6 +298,5 @@ func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uin
 		return voice, id
 	}
 
-	rows.Close()
 	return nil, nil
 }

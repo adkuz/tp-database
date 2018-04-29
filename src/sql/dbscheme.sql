@@ -57,7 +57,7 @@ create table if not exists posts
 
   is_edited boolean default FALSE,
 
-  parent    bigint,
+  parent    bigint DEFAULT 0,
   tree_path bigint array,
 
   message   text not null,
@@ -78,16 +78,27 @@ CREATE TABLE votes
   UNIQUE(username, thread)
 );
 
+CREATE TABLE forum_users
+(
+  username  VARCHAR REFERENCES users(nickname) NOT NULL,
+  forum CITEXT REFERENCES forums(slug) NOT NULL,
+
+  UNIQUE(username, forum)
+);
+
 
 CREATE FUNCTION fix_path() RETURNS trigger AS $fix_path$
 DECLARE
   parent_id BIGINT;
+
 BEGIN
   parent_id := new.parent;
-  new.tree_path := (SELECT tree_path from posts WHERE id = parent_id) || ARRAY[new.id];
+  new.tree_path := array_append((SELECT tree_path from posts WHERE id = parent_id), new.id);
+  UPDATE forums SET posts = posts + 1 WHERE LOWER(slug) = LOWER(new.forum);
   RETURN new;
 END;
 $fix_path$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER fix_path BEFORE INSERT OR UPDATE ON posts
   FOR EACH ROW EXECUTE PROCEDURE fix_path();
