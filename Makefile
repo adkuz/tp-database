@@ -16,7 +16,7 @@ app_run:
 
 
 func-test:
-	./${tester} func --wait=10 --keep -u http://localhost:5000/ -r tests/report.html
+	./${tester} func --wait=30 --keep -u http://localhost:5000/ -r tests/report.html
 
 func-test-no-k:
 	./${tester} func --wait=50 -u http://localhost:5000/ -r tests/report.html
