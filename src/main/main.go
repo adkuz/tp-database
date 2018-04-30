@@ -93,10 +93,10 @@ func init() {
 	fmt.Println("Initialization API...")
 	forumAPI := controllers.MakeForumAPI(&PostgresService)
 
-	fmt.Println(forumAPI)
+
 
 	fmt.Println("Creating router...")
-	ForumRouter = router.CreateRouter(&forumAPI)
+	ForumRouter = router.CreateRouter("/api", &forumAPI)
 }
 
 

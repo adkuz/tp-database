@@ -18,14 +18,14 @@ type Route struct {
 
 type ForumAPI map[string]Route
 
-func CreateRouter(routes *ForumAPI) *mux.Router {
+func CreateRouter(startpoint string, routes *ForumAPI) *mux.Router {
 
 	newRouter := mux.NewRouter().StrictSlash(true)
 
 	for _, route := range *routes {
 		newRouter.
 			Methods(route.Method).
-			Path(route.Pattern).
+			Path(startpoint + route.Pattern).
 			Name(route.Name).
 			Handler(route.HandlerFunc)
 	}
