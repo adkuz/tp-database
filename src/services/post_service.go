@@ -14,11 +14,9 @@ type PostService struct {
 	tableName string
 }
 
-
 func MakePostService(pgdb *PostgresDatabase) PostService {
 	return PostService{db: pgdb, tableName: "posts"}
 }
-
 
 type ParentThread struct {
 	ParentID uint64
@@ -30,7 +28,6 @@ func (ps *PostService) TableName() string {
 }
 
 func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
-	fmt.Println("\nRequiredParents.........................................................")
 
 	parents := make(map[ParentThread]bool)
 
@@ -40,7 +37,7 @@ func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
 	}
 
 	for i := 0; i < len(posts); i++ {
-		fmt.Println("\t", i, ": id, parent = ", posts[i].ID, ",", posts[i].Parent, ",", posts[i].Thread)
+		// fmt.Println("\t", i, ": id, parent = ", posts[i].ID, ",", posts[i].Parent, ",", posts[i].Thread)
 
 		for p := 0; p < len(posts); p++ {
 			if posts[i].Parent == posts[p].ID {
@@ -58,16 +55,11 @@ func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
 		}
 	}
 
-	fmt.Println("requiredParents:", requiredParents)
-	fmt.Println(".......................................................................\n")
-
-
 	return requiredParents
 }
 
 func (ps *PostService) GetAllParents(threadId uint64,
 	limit uint64, since string, desc bool) []uint64 {
-
 
 	sinceStr := ""
 	if since != "" {
@@ -94,7 +86,7 @@ func (ps *PostService) GetAllParents(threadId uint64,
 		"SELECT id FROM posts WHERE thread = %s AND parent = 0 %s ORDER BY id %s%s;",
 		strconv.FormatUint(threadId, 10), sinceStr, order, limitStr)
 
-	fmt.Println("GetAllParents: query:", query)
+	// fmt.Println("GetAllParents: query:", query)
 
 	rows := ps.db.Query(query)
 	defer rows.Close()
@@ -115,19 +107,14 @@ func (ps *PostService) GetAllParents(threadId uint64,
 }
 
 func (ps *PostService) GetPostById(id uint64) *models.Post {
-	fmt.Println("GetPostById: query start")
+	// fmt.Println("GetPostById: query start")
 
 	query := fmt.Sprintf(
 		"SELECT id, created, is_edited, parent, message, author, forum, thread, tree_path FROM %s WHERE id = %s;",
 		ps.tableName, strconv.FormatUint(id, 10))
 
-	fmt.Println("GetThreadBySlug: query:", query)
-	fmt.Println("-----------------------------start------------------------------####################")
-
 	rows := ps.db.Query(query)
 	defer rows.Close()
-
-	fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
 		post := new(models.Post)
@@ -143,29 +130,27 @@ func (ps *PostService) GetPostById(id uint64) *models.Post {
 
 		ids := strings.Split(tree_path[1:len(tree_path)-1], ",")
 		for i := 0; i < len(ids) && ids[i] != ""; i++ {
-			id, err:= strconv.ParseUint(ids[i], 10, 64)
+			id, err := strconv.ParseUint(ids[i], 10, 64)
 			if err != nil {
 				panic(err)
 			}
 			post.Path = append(post.Path, id)
 		}
-		fmt.Println("============================>", post.Path)
+		// fmt.Println("============================>", post.Path)
 		return post
 	}
-
 
 	return nil
 }
 
 func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 
-	INSERT_QUERY:=
+	INSERT_QUERY :=
 		"insert into " + ps.tableName +
 			" (created, message, parent, author, forum, thread)" +
 			" values ($1, $2, $3, $4, $5, $6) returning id;"
 
-
-	fmt.Println("AddThread: INSERT_QUERY:", INSERT_QUERY)
+	// fmt.Println("AddThread: INSERT_QUERY:", INSERT_QUERY)
 
 	err := ps.db.QueryRow(INSERT_QUERY, post.Created, post.Message, post.Parent,
 		post.Author, post.Forum, post.Thread).Scan(&post.ID)
@@ -175,7 +160,7 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 		panic(err)
 	}
 
-	fmt.Println("AddPost: id:", post.ID)
+	// fmt.Println("AddPost: id:", post.ID)
 
 	insertQueryForumUsers :=
 		"insert into forum_users (username, forum) select $1, $2 " +
@@ -220,11 +205,9 @@ func (ps *PostService) GetPostsFlat(thread *models.Thread,
 		limitStr = " LIMIT " + limit
 	}
 
-
 	query := fmt.Sprintf(
 		"SELECT created, id, message, parent, author, forum, thread FROM posts p WHERE p.thread = %s%s ORDER BY p.created %s, p.id %s%s;",
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
-
 
 	fmt.Println("GetPostsFlat: QUERY:", query)
 
@@ -278,11 +261,9 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread,
 		limitStr = " LIMIT " + limit
 	}
 
-
 	query := fmt.Sprintf(
 		"SELECT created, id, message, parent, author, forum, thread FROM posts p WHERE p.thread = %s%s ORDER BY p.tree_path %s, p.id %s%s;",
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
-
 
 	fmt.Println("GetPostsTreeSort: QUERY:", query)
 
@@ -314,7 +295,6 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread,
 func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread,
 	limit, since string, desc bool) []models.Post {
 
-
 	sinceStr := ""
 	if since != "" {
 		sinceStr = " AND tree_path[1] "
@@ -335,7 +315,6 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread,
 		}
 	}
 
-
 	parents := ps.GetAllParents(thread.ID, count, since, desc)
 	fmt.Println("GetPostsParentTreeSort: GetAllParents ->", parents)
 
@@ -344,8 +323,8 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread,
 	for i := 0; i < len(parents); i++ {
 
 		query := fmt.Sprintf(
-			"SELECT created, id, message, parent, author, forum, thread, tree_path " +
-			"FROM posts WHERE tree_path[1] = %s AND thread = %s%s ORDER BY tree_path, id;",
+			"SELECT created, id, message, parent, author, forum, thread, tree_path "+
+				"FROM posts WHERE tree_path[1] = %s AND thread = %s%s ORDER BY tree_path, id;",
 			strconv.FormatUint(parents[i], 10), strconv.FormatUint(thread.ID, 10), sinceStr)
 
 		fmt.Println("--> GetPostsTreeSort: QUERY:", query)
@@ -397,7 +376,6 @@ func (ps *PostService) UpdatePost(post *models.Post) *models.Post {
 
 	return post
 }
-
 
 func (ps *PostService) CountOnForum(forum *models.Forum) uint64 {
 	query := fmt.Sprintf(

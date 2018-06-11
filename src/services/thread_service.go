@@ -42,9 +42,9 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 	}
 
 	thread.Created = t.UTC().Format(time.RFC3339Nano)
-	fmt.Println("AddThread: since:", thread.Created)
+	// fmt.Println("AddThread: since: ", thread.Created)
 
-	fmt.Println("AddThread: INSERT_QUERY:", INSERT_QUERY)
+	// fmt.Println("AddThread: INSERT_QUERY: ", INSERT_QUERY)
 
 	err = ts.db.QueryRow(INSERT_QUERY, thread.Author, thread.Forum,
 		thread.Created, thread.Title, thread.Message, thread.Votes).Scan(&thread.ID)
@@ -66,14 +66,13 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 
 	_, err = insertQueryUserForum.Exec(thread.Author, thread.Forum, thread.Author, thread.Forum)
 	if err != nil {
-		fmt.Println("AddForum:  error:", err.Error())
 		DBError := err.(*pq.Error) // for Postgres DB driver
 		fmt.Println("SQL ERROR!")
 		fmt.Printf("%#v\n", DBError)
 		panic(err)
 	}
 
-	fmt.Println("AddForum: id:", thread.ID)
+	// fmt.Println("AddForum: id:", thread.ID)
 
 	return true, thread
 }
@@ -100,11 +99,9 @@ func (ts *ThreadService) UpdateThread(thread *models.Thread) *models.Thread {
 
 func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bool, []models.Thread) {
 
-	fmt.Println("")
-
 	limitStr := ""
 	if limit != "" {
-		fmt.Println("SelectThreads: limit:", limit)
+		// fmt.Println("SelectThreads: limit:", limit)
 		limitStr = "LIMIT " + limit
 	}
 
@@ -125,7 +122,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		}
 
 		since = t.UTC().Format(time.RFC3339Nano)
-		fmt.Println("SelectThreads: since:", since)
+		// fmt.Println("SelectThreads: since:", since)
 		offsetStr = "AND th.created " + comp + " '" + since + "'"
 	}
 
@@ -133,7 +130,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
 		ts.tableName, slug, offsetStr, order, limitStr)
 
-	fmt.Println("SelectThreads: query:", query)
+	// fmt.Println("SelectThreads: query:", query)
 
 	rows := ts.db.Query(query)
 	defer rows.Close()
@@ -159,18 +156,18 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 
 func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
-	fmt.Println("GetThreadBySlug: query start")
+	// fmt.Println("GetThreadBySlug: query start")
 
 	query := fmt.Sprintf(
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE LOWER(slug) = LOWER('%s');",
 		ts.tableName, slug)
 
-	fmt.Println("GetThreadBySlug: query:", query)
-	fmt.Println("-----------------------------start------------------------------####################")
+	// fmt.Println("GetThreadBySlug: query:", query)
+	// fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
 	defer rows.Close()
-	fmt.Println("------------------------------end-------------------------------####################")
+	// fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
 		thread := new(models.Thread)
@@ -214,6 +211,7 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 			&thread.Message,
 			&thread.Votes,
 		)
+
 		if err != nil {
 			fmt.Println("GetThreadBySlug: query:", query)
 			fmt.Println(err)
@@ -227,7 +225,7 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.Thread {
 
-	fmt.Println("Vote: query start")
+	// fmt.Println("Vote: query start")
 
 	addVoteStr := "+ 1"
 	if vote.Voice == -1 {
@@ -237,13 +235,13 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 	voice, voteId := ts.getVote(vote.Nickname, thread.ID)
 	if voice != nil {
 		if *voice == vote.Voice {
-			fmt.Println("Vote: this vote is existed")
+			// fmt.Println("Vote: this vote is existed")
 			return thread
 		} else {
 			voiceUpdate := "UPDATE votes SET voice = $1 WHERE id = $2;"
 
-			fmt.Println("<< Vote  update: vote, thread.id:", vote, thread.ID)
-			fmt.Println("-----------------------------start------------------------------####################")
+			// fmt.Println("<< Vote  update: vote, thread.id:", vote, thread.ID)
+			// fmt.Println("-----------------------------start------------------------------####################")
 
 			rows := ts.db.Query(voiceUpdate, vote.Voice, voteId)
 			defer rows.Close()
@@ -256,8 +254,8 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 
 		voteInsert := "INSERT INTO votes (username, voice, thread) VALUES ($1, $2, $3) returning id;"
 
-		fmt.Println("<< Vote  insert: vote, thread.id:", vote, thread.ID)
-		fmt.Println("-----------------------------start------------------------------####################")
+		// fmt.Println("<< Vote  insert: vote, thread.id:", vote, thread.ID)
+		// fmt.Println("-----------------------------start------------------------------####################")
 
 		var id uint64
 		err := ts.db.QueryRow(voteInsert, vote.Nickname, vote.Voice, thread.ID).Scan(&id)
@@ -271,32 +269,32 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 		"UPDATE %s SET votes = votes %s WHERE id = %s returning votes;",
 		ts.tableName, addVoteStr, strconv.FormatUint(thread.ID, 10))
 
-	fmt.Println("-----------------------------start-2-----------------------------####################")
+	// fmt.Println("-----------------------------start-2-----------------------------####################")
 	err := ts.db.QueryRow(query).Scan(&thread.Votes)
 	if err != nil {
 		fmt.Println("Vote:  error:", err.Error())
 		panic(err)
 	}
 
-	fmt.Println("------------------------------end-------------------------------####################")
+	// fmt.Println("------------------------------end-------------------------------####################")
 
 	return thread
 }
 
 func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uint64) {
-	fmt.Println("getVote: query start")
+	// fmt.Println("getVote: query start")
 
 	query := fmt.Sprintf(
 		"SELECT id, voice FROM votes WHERE thread = %s AND username = '%s';",
 		strconv.FormatUint(threadId, 10), username)
 
-	fmt.Println("getVote: query:", query)
-	fmt.Println("-----------------------------start------------------------------####################")
+	// fmt.Println("getVote: query:", query)
+	// fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
 	defer rows.Close()
 
-	fmt.Println("------------------------------end-------------------------------####################")
+	// fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
 		voice := new(int32)

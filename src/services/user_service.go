@@ -2,19 +2,14 @@ package services
 
 import (
 	"fmt"
+
 	"github.com/Alex-Kuz/tp-database/src/models"
 )
-
-
 
 type UserService struct {
 	db        *PostgresDatabase
 	tableName string
 }
-
-
-
-
 
 func remove(slice []int, s int) []int {
 	return append(slice[:s], slice[s+1:]...)
@@ -31,7 +26,6 @@ func (uc *UserService) GetDB() *PostgresDatabase {
 func (us *UserService) TableName() string {
 	return us.tableName
 }
-
 
 func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 
@@ -105,7 +99,7 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 
 	query := fmt.Sprintf(
 		"SELECT about, email, fullname, nickname FROM %s WHERE LOWER(email) = LOWER('%s') OR LOWER(nickname) = LOWER('%s')",
-			uc.tableName, email, nickname)
+		uc.tableName, email, nickname)
 
 	rows := uc.db.Query(query)
 	defer rows.Close()
@@ -150,13 +144,13 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 	return true, nil
 }
 
-func (uc *UserService) UpdateUser(user *models.User)  {
+func (uc *UserService) UpdateUser(user *models.User) {
 
 	/*fmt.Println("to update {about: ",user.About,
-		", email: ", user.Email,
-		", fullname: ", user.Fullname,
-		", nickname: ", user.Nickname,
-		"}")
+	", email: ", user.Email,
+	", fullname: ", user.Fullname,
+	", nickname: ", user.Nickname,
+	"}")
 	*/
 
 	UPDATE_QUERY :=
@@ -175,4 +169,3 @@ func (uc *UserService) UpdateUser(user *models.User)  {
 	}
 
 }
-

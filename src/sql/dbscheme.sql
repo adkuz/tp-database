@@ -1,17 +1,18 @@
 CREATE EXTENSION IF NOT EXISTS CITEXT;
 
+
 drop table if exists users cascade;
 drop table if exists forums cascade;
 drop table if exists threads cascade;
 drop table if exists posts cascade;
 drop table if exists votes cascade;
 
+drop index if exists threads_slug_idx;
+
 
 CREATE TABLE IF NOT EXISTS users
 (
-  id       BIGSERIAL PRIMARY KEY,
-
-  nickname VARCHAR(64) NOT NULL UNIQUE,
+  nickname VARCHAR(64) NOT NULL UNIQUE primary key,
   email    CITEXT NOT NULL UNIQUE,
 
   about    TEXT DEFAULT '',
@@ -48,6 +49,9 @@ CREATE TABLE threads
 
   votes      INTEGER DEFAULT 0
 );
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(slug);
 
 create table if not exists posts
 (
