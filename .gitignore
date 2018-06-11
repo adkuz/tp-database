@@ -24,4 +24,6 @@ tests/*.html
 cmd/forum-server
 .idea/**
 .idea
+.vscode
+.vscode/**
 *.app
