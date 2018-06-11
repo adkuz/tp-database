@@ -18,7 +18,6 @@ import (
 	resp "github.com/Alex-Kuz/tp-database/src/utils/responses"
 )
 
-
 var (
 	UserService   services.UserService
 	ForumService  services.ForumService
@@ -37,7 +36,6 @@ func writeJsonBody(respWriter *http.ResponseWriter, v interface{}) {
 	}
 }
 
-
 func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -52,7 +50,6 @@ func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 	scs, usersArray := UserService.AddUser(&user)
 
-
 	if scs {
 		respWriter.WriteHeader(http.StatusCreated)
 		writeJsonBody(&respWriter, user)
@@ -64,7 +61,6 @@ func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
-
 
 	forum := models.Forum{}
 
@@ -147,8 +143,7 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 	userInfo.Nickname = nickname
 
 	// Конфликт может возникнуть только по значению email
-	if opponent := UserService.GetUserByEmail(userInfo.Email);
-			opponent != nil && *opponent != *user {
+	if opponent := UserService.GetUserByEmail(userInfo.Email); opponent != nil && *opponent != *user {
 		respWriter.WriteHeader(http.StatusConflict)
 		writeJsonBody(&respWriter, resp.Message{"User with this email already exists"})
 		return
@@ -188,7 +183,6 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 
 	fmt.Println("\n----------------------------------------------------------------------------")
 
-
 	thread := models.Thread{}
 	if err := json.NewDecoder(request.Body).Decode(&thread); err != nil {
 		panic(err)
@@ -222,7 +216,6 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 		thread.Created = time.Now().UTC().Format(time.RFC3339)
 		fmt.Println("\nCreateThread: thread.Created =", thread.Created)
 	}
-
 
 	fmt.Println("CreateThread: thread{slug, created, author}:",
 		thread.Slug, thread.Created, thread.Author)
@@ -332,7 +325,6 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	parentsToThreads := PostService.RequiredParents(postsArray)
 
-
 	timeMoment := time.Now().UTC().Format(time.RFC3339)
 	threadId = thread.ID
 	forumSlug := thread.Forum
@@ -363,7 +355,6 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 		PostService.AddPost(&postsArray[i])
 	}
-
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, postsArray)
@@ -410,7 +401,6 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	thread = ThreadService.Vote(thread, vote)
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, thread)
@@ -440,10 +430,9 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	limit := request.URL.Query().Get("limit")
 	since := request.URL.Query().Get("since")
-	sort  := request.URL.Query().Get("sort")
+	sort := request.URL.Query().Get("sort")
 
 	descRef := request.URL.Query().Get("desc")
 	desc := false
@@ -455,7 +444,6 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-
 	var posts []models.Post
 	if sort == "parent_tree" {
 		posts = PostService.GetPostsParentTreeSort(thread, limit, since, desc)
@@ -464,7 +452,6 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 	} else {
 		posts = PostService.GetPostsFlat(thread, limit, since, desc)
 	}
-
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, posts)
@@ -526,7 +513,6 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	limit := request.URL.Query().Get("limit")
 	since := request.URL.Query().Get("since")
 	descRef := request.URL.Query().Get("desc")
@@ -567,12 +553,8 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
-
 	var postInfo resp.PostInfo
 	postInfo.Post = post
-
-
 
 	var list []string
 	if related := request.URL.Query()["related"]; len(related) > 0 {
@@ -600,7 +582,6 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	fmt.Println(postInfo)
-
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, postInfo)
@@ -639,7 +620,6 @@ func PostUpdate(respWriter http.ResponseWriter, request *http.Request) {
 
 func ServiceStatus(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
-
 
 	status := make(map[string]uint64)
 
@@ -692,129 +672,127 @@ func ServiceClear(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.WriteHeader(http.StatusOK)
 }
 
-
-
-func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
-	forumAPI := make(router.ForumAPI)
+func MakeForumAPI(pgdb *services.PostgresDatabase) router.RouterAPI {
+	forumAPI := make(router.RouterAPI)
 
 	UserService = services.MakeUserService(pgdb)
 	ForumService = services.MakeForumService(pgdb)
 	ThreadService = services.MakeThreadService(pgdb)
 	PostService = services.MakePostService(pgdb)
 
-	forumAPI["CreateUser"] = router.Route {
+	forumAPI["CreateUser"] = router.Route{
 		Name:        "CreateUser",
 		Method:      POST,
 		Pattern:     "/user/{nickname}/create",
 		HandlerFunc: CreateUser,
 	}
 
-	forumAPI["UserProfile"] = router.Route {
+	forumAPI["UserProfile"] = router.Route{
 		Name:        "UserProfile",
 		Method:      GET,
 		Pattern:     "/user/{nickname}/profile",
 		HandlerFunc: UserProfile,
 	}
 
-	forumAPI["UpdateUser"] = router.Route {
+	forumAPI["UpdateUser"] = router.Route{
 		Name:        "UpdateUser",
 		Method:      POST,
 		Pattern:     "/user/{nickname}/profile",
 		HandlerFunc: UpdateUser,
 	}
 
-	forumAPI["CreateForum"] = router.Route {
+	forumAPI["CreateForum"] = router.Route{
 		Name:        "CreateForum",
 		Method:      POST,
 		Pattern:     "/forum/create",
 		HandlerFunc: CreateForum,
 	}
 
-	forumAPI["ForumDetails"] = router.Route {
+	forumAPI["ForumDetails"] = router.Route{
 		Name:        "ForumDetails",
 		Method:      GET,
 		Pattern:     "/forum/{slug}/details",
 		HandlerFunc: ForumDetails,
 	}
 
-	forumAPI["CreateThread"] = router.Route {
+	forumAPI["CreateThread"] = router.Route{
 		Name:        "CreateThread",
 		Method:      POST,
 		Pattern:     "/forum/{slug}/create",
 		HandlerFunc: CreateThread,
 	}
 
-	forumAPI["ForumThreads"] = router.Route {
+	forumAPI["ForumThreads"] = router.Route{
 		Name:        "ForumThreads",
 		Method:      GET,
 		Pattern:     "/forum/{slug}/threads",
 		HandlerFunc: ForumThreads,
 	}
 
-	forumAPI["ThreadDetailsGet"] = router.Route {
+	forumAPI["ThreadDetailsGet"] = router.Route{
 		Name:        "ThreadDetails",
 		Method:      GET,
 		Pattern:     "/thread/{slug_or_id}/details",
 		HandlerFunc: ThreadDetails,
 	}
 
-	forumAPI["ThreadUpdate"] = router.Route {
+	forumAPI["ThreadUpdate"] = router.Route{
 		Name:        "ThreadUpdate",
 		Method:      POST,
 		Pattern:     "/thread/{slug_or_id}/details",
 		HandlerFunc: ThreadUpdate,
 	}
 
-	forumAPI["CreatePosts"] = router.Route {
+	forumAPI["CreatePosts"] = router.Route{
 		Name:        "CreatePosts",
 		Method:      POST,
 		Pattern:     "/thread/{slug_or_id}/create",
 		HandlerFunc: CreatePosts,
 	}
 
-	forumAPI["ThreadVote"] = router.Route {
+	forumAPI["ThreadVote"] = router.Route{
 		Name:        "ThreadVote",
 		Method:      POST,
 		Pattern:     "/thread/{slug_or_id}/vote",
 		HandlerFunc: ThreadVote,
 	}
 
-	forumAPI["ThreadPosts"] = router.Route {
+	forumAPI["ThreadPosts"] = router.Route{
 		Name:        "ThreadPosts",
 		Method:      GET,
 		Pattern:     "/thread/{slug_or_id}/posts",
 		HandlerFunc: ThreadPosts,
 	}
 
-	forumAPI["ForumUsers"] = router.Route {
+	forumAPI["ForumUsers"] = router.Route{
 		Name:        "ForumUsers",
 		Method:      GET,
 		Pattern:     "/forum/{slug}/users",
 		HandlerFunc: ForumUsers,
 	}
 
-	forumAPI["PostDetails"] = router.Route {
+	forumAPI["PostDetails"] = router.Route{
 		Name:        "PostDetails",
 		Method:      GET,
 		Pattern:     "/post/{id}/details",
 		HandlerFunc: PostDetails,
 	}
 
-	forumAPI["PostUpdate"] = router.Route {
+	forumAPI["PostUpdate"] = router.Route{
 		Name:        "PostUpdate",
 		Method:      POST,
 		Pattern:     "/post/{id}/details",
 		HandlerFunc: PostUpdate,
 	}
 
-	forumAPI["ServiceStatus"] = router.Route {
+	forumAPI["ServiceStatus"] = router.Route{
 		Name:        "ServiceStatus",
 		Method:      GET,
 		Pattern:     "/service/status",
 		HandlerFunc: ServiceStatus,
 	}
 
-	forumAPI["ServiceClear"] = router.Route {
+	forumAPI["ServiceClear"] = router.Route{
 		Name:        "ServiceClear",
 		Method:      POST,
 		Pattern:     "/service/clear",
@@ -823,5 +801,3 @@ func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
 
 	return forumAPI
 }
-
-

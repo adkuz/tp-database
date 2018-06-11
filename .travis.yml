@@ -11,6 +11,7 @@ install:
 
 script:
   - make func-test
+  - ./tests/tech-db-forum fill --wait=30 --thread=8
 
 after_script:
   - make stop

@@ -46,8 +46,6 @@ logs:
 	docker logs forum_tp
 
 
-
-
 delete-container:
 	docker images
 	docker rmi ${docker_name}:${docker_tag}

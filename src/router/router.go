@@ -6,8 +6,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
-
 type Route struct {
 	Name        string
 	Method      string
@@ -15,10 +13,9 @@ type Route struct {
 	HandlerFunc http.HandlerFunc
 }
 
+type RouterAPI map[string]Route
 
-type ForumAPI map[string]Route
-
-func CreateRouter(startpoint string, routes *ForumAPI) *mux.Router {
+func CreateRouter(startpoint string, routes *RouterAPI) *mux.Router {
 
 	newRouter := mux.NewRouter().StrictSlash(true)
 

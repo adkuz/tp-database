@@ -78,12 +78,11 @@ CREATE TABLE votes
   UNIQUE(username, thread)
 );
 
+
 CREATE TABLE forum_users
 (
   username  VARCHAR REFERENCES users(nickname) NOT NULL,
-  forum CITEXT REFERENCES forums(slug) NOT NULL,
-
-  UNIQUE(username, forum)
+  forum CITEXT REFERENCES forums(slug) NOT NULL
 );
 
 

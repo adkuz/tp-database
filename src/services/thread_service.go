@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
+	"github.com/lib/pq"
 )
 
 type ThreadService struct {
@@ -17,22 +18,21 @@ func MakeThreadService(pgdb *PostgresDatabase) ThreadService {
 	return ThreadService{db: pgdb, tableName: "threads"}
 }
 
-
 func (ts *ThreadService) TableName() string {
 	return ts.tableName
 }
 
 func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread) {
 
-	INSERT_QUERY:=
+	INSERT_QUERY :=
 		"insert into " + ts.tableName +
 			" (%s author, forum, created, title, message, votes)" +
-				" values (%s $1, $2, $3, $4, $5, $6) returning id;"
+			" values (%s $1, $2, $3, $4, $5, $6) returning id;"
 
 	if thread.Slug == "" {
 		INSERT_QUERY = fmt.Sprintf(INSERT_QUERY, "", "")
 	} else {
-		INSERT_QUERY = fmt.Sprintf(INSERT_QUERY, "slug, ", "'" + thread.Slug + "', ")
+		INSERT_QUERY = fmt.Sprintf(INSERT_QUERY, "slug, ", "'"+thread.Slug+"', ")
 	}
 
 	layout := time.RFC3339Nano
@@ -67,6 +67,9 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 	_, err = insertQueryUserForum.Exec(thread.Author, thread.Forum, thread.Author, thread.Forum)
 	if err != nil {
 		fmt.Println("AddForum:  error:", err.Error())
+		DBError := err.(*pq.Error) // for Postgres DB driver
+		fmt.Println("SQL ERROR!")
+		fmt.Printf("%#v\n", DBError)
 		panic(err)
 	}
 
@@ -105,7 +108,6 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		limitStr = "LIMIT " + limit
 	}
 
-
 	comp := " >= "
 	order := "ORDER BY th.created "
 	if desc {
@@ -127,13 +129,11 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		offsetStr = "AND th.created " + comp + " '" + since + "'"
 	}
 
-
 	query := fmt.Sprintf(
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
-		ts.tableName, slug, offsetStr, order,  limitStr)
+		ts.tableName, slug, offsetStr, order, limitStr)
 
 	fmt.Println("SelectThreads: query:", query)
-
 
 	rows := ts.db.Query(query)
 	defer rows.Close()
@@ -163,7 +163,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 	query := fmt.Sprintf(
 		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE LOWER(slug) = LOWER('%s');",
-			ts.tableName, slug)
+		ts.tableName, slug)
 
 	fmt.Println("GetThreadBySlug: query:", query)
 	fmt.Println("-----------------------------start------------------------------####################")
@@ -174,8 +174,16 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 	for rows.Next() {
 		thread := new(models.Thread)
-		err := rows.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
-			&thread.Title, &thread.Message, &thread.Votes)
+		err := rows.Scan(
+			&thread.ID,
+			&thread.Slug,
+			&thread.Author,
+			&thread.Forum,
+			&thread.Created,
+			&thread.Title,
+			&thread.Message,
+			&thread.Votes,
+		)
 		if err != nil {
 			fmt.Println(err)
 			panic(err)
@@ -187,29 +195,33 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
-	fmt.Println("GetThreadById: query start")
-
 	query := fmt.Sprintf(
-		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE id = %s;",
+		"SELECT id, coalesce(slug, ''), author, forum, created, title, message, votes FROM %s WHERE id = %s;",
 		ts.tableName, strconv.FormatUint(id, 10))
-
-	fmt.Println("GetThreadBySlug: query:", query)
-	fmt.Println("-----------------------------start------------------------------####################")
 
 	rows := ts.db.Query(query)
 	defer rows.Close()
-	fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
 		thread := new(models.Thread)
-		err := rows.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
-			&thread.Title, &thread.Message, &thread.Votes)
+		err := rows.Scan(
+			&thread.ID,
+			&thread.Slug,
+			&thread.Author,
+			&thread.Forum,
+			&thread.Created,
+			&thread.Title,
+			&thread.Message,
+			&thread.Votes,
+		)
 		if err != nil {
+			fmt.Println("GetThreadBySlug: query:", query)
 			fmt.Println(err)
 			panic(err)
 		}
 		return thread
 	}
+
 	return nil
 }
 
@@ -254,7 +266,6 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 			panic(err)
 		}
 	}
-
 
 	query := fmt.Sprintf(
 		"UPDATE %s SET votes = votes %s WHERE id = %s returning votes;",

@@ -1,14 +1,13 @@
 package services
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"os"
 )
-
 
 type Database interface {
 	Setup(string)
@@ -18,8 +17,6 @@ type Database interface {
 	Query(string)
 	QueryRow(query string, args ...interface{})
 }
-
-
 
 type Config struct {
 	// Address that locates our postgres instance
@@ -39,14 +36,13 @@ type PostgresDatabase struct {
 	LastResult sql.Result
 }
 
-
 func MakeConnectionString(config Config) string {
 	return fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		config.User, config.Password, config.DBName, config.Host, config.Port)
 }
 
-func (pgdb *PostgresDatabase) QueryRow (query string, args ...interface{}) *sql.Row {
+func (pgdb *PostgresDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
 	return pgdb.Connection.QueryRow(query, args...)
 }
 
@@ -96,16 +92,6 @@ func (pgdb *PostgresDatabase) Setup(filename string) {
 
 	command := string(bs)
 	pgdb.Execute(command)
-
-	/*
-	commands := strings.Split(string(bs), ";")
-	for i := range commands {
-		if commands[i] != "" {
-			//fmt.Println(i, ": ", commands[i]+";")
-			pgdb.Execute(commands[i] + ";")
-		}
-	}
-	*/
 }
 
 func (pgdb *PostgresDatabase) Execute(query string, args ...interface{}) sql.Result {
@@ -117,18 +103,18 @@ func (pgdb *PostgresDatabase) Execute(query string, args ...interface{}) sql.Res
 	return res
 }
 
-
 func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *sql.Rows {
 
 	res, err := pgdb.Connection.Query(query, args...)
+
 	if err != nil {
+		DBError := err.(*pq.Error) // for Postgres DB driver
+		fmt.Println("SQL ERROR!")
+		fmt.Printf("%#v\n", DBError)
 		panic(err)
 	}
 	return res
 }
-
-
-
 
 func (pgdb *PostgresDatabase) Result() sql.Result {
 	return pgdb.LastResult

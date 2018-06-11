@@ -1,36 +1,30 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
 	"os"
 	"regexp"
 
-	"github.com/gorilla/mux"
-
-	"github.com/Alex-Kuz/tp-database/src/services"
 	"github.com/Alex-Kuz/tp-database/src/controllers"
 	"github.com/Alex-Kuz/tp-database/src/router"
+	"github.com/Alex-Kuz/tp-database/src/services"
+	"github.com/gorilla/mux"
 )
 
-
-func doesNotImplements(responceWriter http.ResponseWriter, request *http.Request){
+func doesNotImplements(responceWriter http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(responceWriter, "This method does not have implements.")
 	fmt.Println("Endpoint Hit: homePage")
 }
 
-
-
-
 var (
-
-	postgresConfig = services.Config {
-		Host: "localhost",
-		Port: "5432",
-		User: "postgres",
+	postgresConfig = services.Config{
+		Host:     "localhost",
+		Port:     "5432",
+		User:     "postgres",
 		Password: "12345",
-		DBName: "forum_tp",
+		DBName:   "forum_tp",
 	}
 
 	SchemaFile = "src/sql/dbscheme.sql"
@@ -64,7 +58,7 @@ func readConfig(dbLine *string) services.Config {
 
 	fmt.Println(paramsMap)
 
-	return services.Config {
+	return services.Config{
 		Host:     paramsMap["host"],
 		Port:     paramsMap["port"],
 		User:     paramsMap["username"],
@@ -72,7 +66,6 @@ func readConfig(dbLine *string) services.Config {
 		DBName:   paramsMap["db_name"],
 	}
 }
-
 
 func init() {
 
@@ -93,18 +86,12 @@ func init() {
 	fmt.Println("Initialization API...")
 	forumAPI := controllers.MakeForumAPI(&PostgresService)
 
-
-
 	fmt.Println("Creating router...")
 	ForumRouter = router.CreateRouter("/api", &forumAPI)
 }
-
-
 
 func main() {
 	fmt.Println("Starting server...")
 
 	log.Fatal(http.ListenAndServe(":5000", ForumRouter))
 }
-
-
