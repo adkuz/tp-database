@@ -4,12 +4,18 @@ import (
 	"fmt"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
+	"github.com/jackc/pgx"
 )
 
 type UserService struct {
 	db        *PostgresDatabase
 	tableName string
 }
+
+const (
+	insertUserQuery = "insert into users (nickname, about, email, fullname) values ($1, $2, $3, $4);"
+	updateUserQuery = "UPDATE users SET about = $2, email = $3, fullname = $4  WHERE LOWER(nickname) = LOWER($1);"
+)
 
 func remove(slice []int, s int) []int {
 	return append(slice[:s], slice[s+1:]...)
@@ -117,16 +123,10 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 		return false, conflictUsers
 	}
 
-	INSERT_QUERY := "insert into users (nickname, about, email, fullname) values ($1, $2, $3, $4);"
+	resultRows := uc.db.QueryRow(insertUserQuery, user.Nickname, user.About, user.Email, user.Fullname)
 
-	insertQuery, err := uc.db.Prepare(INSERT_QUERY)
-	if err != nil {
-		panic(err)
-	}
-	defer insertQuery.Close()
-
-	_, err = insertQuery.Exec(user.Nickname, user.About, user.Email, user.Fullname)
-	if err != nil {
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
 
@@ -135,18 +135,10 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 
 func (uc *UserService) UpdateUser(user *models.User) {
 
-	UPDATE_QUERY :=
-		"UPDATE users SET about = $2, email = $3, fullname = $4  WHERE LOWER(nickname) = LOWER($1);"
+	resultRows := uc.db.QueryRow(updateUserQuery, user.Nickname, user.About, user.Email, user.Fullname)
 
-	updateQuery, err := uc.db.Prepare(UPDATE_QUERY)
-	if err != nil {
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
-	defer updateQuery.Close()
-
-	_, err = updateQuery.Exec(user.Nickname, user.About, user.Email, user.Fullname)
-	if err != nil {
-		panic(err)
-	}
-
 }

@@ -1,9 +1,9 @@
 package services
 
 import (
-	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx"
 	"github.com/lib/pq"
 
 	"os"
@@ -22,7 +22,7 @@ type Config struct {
 	// Address that locates our postgres instance
 	Host string
 	// Port to connect to
-	Port string
+	Port uint16
 	// User that has access to the database
 	User string
 	// Password so that the user can login
@@ -32,40 +32,44 @@ type Config struct {
 }
 
 type PostgresDatabase struct {
-	Connection *sql.DB
-	LastResult sql.Result
+	Connections *pgx.ConnPool
 }
 
-func MakeConnectionString(config Config) string {
-	return fmt.Sprintf(
-		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
-		config.User, config.Password, config.DBName, config.Host, config.Port)
+func MakeConnectionConfig(config Config) pgx.ConnConfig {
+	return pgx.ConnConfig{
+		Host:     config.Host,
+		User:     config.User,
+		Password: config.Password,
+		Database: config.DBName,
+		Port:     config.Port,
+	}
 }
 
-func (pgdb *PostgresDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
-	return pgdb.Connection.QueryRow(query, args...)
+func (pgdb *PostgresDatabase) DataBase() *pgx.ConnPool {
+	return pgdb.Connections
 }
 
-func (pgdb *PostgresDatabase) Prepare(query string) (*sql.Stmt, error) {
-	return pgdb.Connection.Prepare(query)
+func (pgdb *PostgresDatabase) QueryRow(query string, args ...interface{}) *pgx.Row {
+	return pgdb.Connections.QueryRow(query, args...)
 }
 
-func Connect(dbConnectionString string) PostgresDatabase {
-	pgdb := PostgresDatabase{Connection: nil, LastResult: nil}
+func Connect(connectionConfig pgx.ConnConfig) PostgresDatabase {
+	pgdb := PostgresDatabase{Connections: nil}
 
-	// Here one heed lib/pq
-	db, err := sql.Open("postgres", dbConnectionString)
+	conns, err := pgx.NewConnPool(
+		pgx.ConnPoolConfig{
+			ConnConfig:     connectionConfig,
+			MaxConnections: 50,
+		},
+	)
+
 	if err != nil {
 		fmt.Println("DB connection error: ", err)
 		panic(err)
 	}
 
-	pgdb.Connection, db = db, pgdb.Connection
+	pgdb.Connections = conns
 
-	if err := pgdb.Connection.Ping(); err != nil {
-		fmt.Println("DB ping error: ", err)
-		panic(err)
-	}
 	return pgdb
 }
 
@@ -94,18 +98,18 @@ func (pgdb *PostgresDatabase) Setup(filename string) {
 	pgdb.Execute(command)
 }
 
-func (pgdb *PostgresDatabase) Execute(query string, args ...interface{}) sql.Result {
+func (pgdb *PostgresDatabase) Execute(query string, args ...interface{}) pgx.CommandTag {
 
-	res, err := pgdb.Connection.Exec(query, args...)
+	res, err := pgdb.Connections.Exec(query, args...)
 	if err != nil {
 		panic(err)
 	}
 	return res
 }
 
-func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *sql.Rows {
+func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *pgx.Rows {
 
-	res, err := pgdb.Connection.Query(query, args...)
+	res, err := pgdb.Connections.Query(query, args...)
 
 	if err != nil {
 		DBError := err.(*pq.Error) // for Postgres DB driver
@@ -114,10 +118,6 @@ func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *sql.Rows
 	return res
 }
 
-func (pgdb *PostgresDatabase) Result() sql.Result {
-	return pgdb.LastResult
-}
-
 func (pgdb *PostgresDatabase) Close() {
-	pgdb.Connection.Close()
+	pgdb.Connections.Close()
 }
