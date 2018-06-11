@@ -7,7 +7,25 @@ drop table if exists threads cascade;
 drop table if exists posts cascade;
 drop table if exists votes cascade;
 
+
 drop index if exists threads_slug_idx;
+drop index if exists forums_slug_idx;
+drop index if exists users_slug_idx;
+
+
+DROP INDEX IF EXISTS post_author_idx;
+DROP INDEX IF EXISTS post_forum_idx;
+DROP INDEX IF EXISTS post_thread_idx;
+DROP INDEX IF EXISTS post_created_idx;
+DROP INDEX IF EXISTS post_tree_parent_idx;
+DROP INDEX IF EXISTS post_thread_created_id_idx;
+DROP INDEX IF EXISTS post_created_thread_id_idx;
+DROP INDEX IF EXISTS post_id_thread_idx;
+DROP INDEX IF EXISTS post_thread_tree_path;
+
+
+DROP INDEX IF EXISTS forum_users_username_idx;
+DROP INDEX IF EXISTS forum_users_forum_slug_idx;
 
 
 CREATE TABLE IF NOT EXISTS users
@@ -18,6 +36,8 @@ CREATE TABLE IF NOT EXISTS users
   about    TEXT DEFAULT '',
   fullname VARCHAR(96) DEFAULT ''
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_slug_idx ON users(lower(nickname));
 
 
 CREATE TABLE IF NOT EXISTS forums
@@ -33,6 +53,9 @@ CREATE TABLE IF NOT EXISTS forums
 
   author  VARCHAR references users(nickname)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(lower(slug));
+
 
 CREATE TABLE threads
 (
@@ -50,8 +73,8 @@ CREATE TABLE threads
   votes      INTEGER DEFAULT 0
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
 
-CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(slug);
 
 create table if not exists posts
 (
@@ -71,6 +94,15 @@ create table if not exists posts
   thread    bigint references threads(id)
 );
 
+CREATE INDEX IF NOT EXISTS post_author_idx ON posts(lower(author));
+CREATE INDEX IF NOT EXISTS post_forum_idx ON posts(forum);
+CREATE INDEX IF NOT EXISTS post_thread_idx ON posts(thread);
+CREATE INDEX IF NOT EXISTS post_created_idx ON posts(created);
+CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
+CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id);
+CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(parent, thread, id);
+CREATE INDEX IF NOT EXISTS post_id_thread_idx ON posts(id, thread);
+CREATE INDEX IF NOT EXISTS post_thread_tree_path ON posts(thread, tree_path);
 
 CREATE TABLE votes
 (
@@ -88,6 +120,11 @@ CREATE TABLE forum_users
   username  VARCHAR REFERENCES users(nickname) NOT NULL,
   forum CITEXT REFERENCES forums(slug) NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
+CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(forum);
+
+
 
 
 CREATE FUNCTION fix_path() RETURNS trigger AS $fix_path$

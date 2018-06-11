@@ -6,7 +6,6 @@ import (
 	"github.com/Alex-Kuz/tp-database/src/models"
 )
 
-
 type ForumService struct {
 	db        *PostgresDatabase
 	tableName string
@@ -16,15 +15,13 @@ func MakeForumService(pgdb *PostgresDatabase) ForumService {
 	return ForumService{db: pgdb, tableName: "forums"}
 }
 
-
 func (fs *ForumService) TableName() string {
 	return fs.tableName
 }
 
 func (fs *ForumService) GetForumBySlug(slug string) *models.Forum {
 	query := fmt.Sprintf(
-		"SELECT slug, author, title, threads, posts FROM %s WHERE LOWER(slug) = LOWER('%s')",
-			fs.tableName, slug)
+		"SELECT slug, author, title, threads, posts FROM forums WHERE LOWER(slug) = LOWER('%s')", slug)
 
 	rows := fs.db.Query(query)
 	defer rows.Close()
@@ -42,8 +39,7 @@ func (fs *ForumService) GetForumBySlug(slug string) *models.Forum {
 
 func (fs *ForumService) SlugBySlug(slug string) *string {
 	query := fmt.Sprintf(
-		"SELECT slug FROM %s WHERE LOWER(slug) = LOWER('%s')",
-		fs.tableName, slug)
+		"SELECT slug FROM forums WHERE LOWER(slug) = LOWER('%s')", slug)
 
 	rows := fs.db.Query(query)
 	defer rows.Close()
@@ -60,8 +56,7 @@ func (fs *ForumService) SlugBySlug(slug string) *string {
 }
 
 func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
-	UPDATE_QUERY :=
-		"UPDATE " + fs.tableName + " SET threads = threads + 1 WHERE LOWER($1) = LOWER(slug);"
+	UPDATE_QUERY := "UPDATE forums SET threads = threads + 1 WHERE LOWER($1) = LOWER(slug);"
 
 	insertQuery, err := fs.db.Prepare(UPDATE_QUERY)
 	//defer insertQuery.Close()
@@ -78,7 +73,6 @@ func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
 		panic(err)
 	}
 
-
 	return true
 }
 
@@ -88,8 +82,7 @@ func (fs *ForumService) AddForum(forum *models.Forum) (bool, *models.Forum) {
 		return false, conflictForum
 	}
 
-	INSERT_QUERY :=
-		"insert into " + fs.tableName + " (slug, author, title, threads, posts) values ($1, $2, $3, $4, $5);"
+	INSERT_QUERY := "insert into forums (slug, author, title, threads, posts) values ($1, $2, $3, $4, $5);"
 
 	insertQuery, err := fs.db.Prepare(INSERT_QUERY)
 	defer insertQuery.Close()
@@ -131,14 +124,12 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 		limitStr = " LIMIT " + limit
 	}
 
-
 	query := fmt.Sprintf(
-		"SELECT nickname, fullname, about, email FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)" +
+		"SELECT nickname, fullname, about, email FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)"+
 			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(u.nickname) %s %s;",
 		forum.Slug, sinceStr, order, limitStr)
 
-
-	fmt.Println("GetUsers: QUERY:", query)
+	// fmt.Println("GetUsers: QUERY:", query)
 
 	rows := fs.db.Query(query)
 	defer rows.Close()
@@ -161,6 +152,5 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 
 		users = append(users, user)
 	}
-	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&7")
 	return users
 }

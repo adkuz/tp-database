@@ -509,7 +509,7 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 		fmt.Println("ForumUsers: firum with slug '", threadSlug, "' not found")
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"forum not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
+		// fmt.Println("----------------------------------------------------------------------------\n")
 		return
 	}
 
@@ -532,7 +532,7 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 	writeJsonBody(&respWriter, users)
 
 	fmt.Println(request.URL.String())
-	fmt.Println("----------------------------------------------------------------------------\n")
+	// fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func PostDetails(respWriter http.ResponseWriter, request *http.Request) {

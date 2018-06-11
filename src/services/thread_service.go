@@ -25,8 +25,7 @@ func (ts *ThreadService) TableName() string {
 func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread) {
 
 	INSERT_QUERY :=
-		"insert into " + ts.tableName +
-			" (%s author, forum, created, title, message, votes)" +
+		"insert into threads (%s author, forum, created, title, message, votes)" +
 			" values (%s $1, $2, $3, $4, $5, $6) returning id;"
 
 	if thread.Slug == "" {
@@ -80,8 +79,7 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 func (ts *ThreadService) UpdateThread(thread *models.Thread) *models.Thread {
 
 	update :=
-		"update " + ts.tableName + " SET title = $2, message = $3 " +
-			"WHERE id = $1;"
+		"update threads SET title = $2, message = $3 WHERE id = $1;"
 
 	updateQuery, err := ts.db.Prepare(update)
 	if err != nil {
@@ -127,8 +125,8 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 	}
 
 	query := fmt.Sprintf(
-		"SELECT id, slug, author, forum, created, title, message, votes FROM %s th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
-		ts.tableName, slug, offsetStr, order, limitStr)
+		"SELECT id, coalesce(slug, ''), author, forum, created, title, message, votes FROM threads th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
+		slug, offsetStr, order, limitStr)
 
 	// fmt.Println("SelectThreads: query:", query)
 
@@ -159,8 +157,8 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 	// fmt.Println("GetThreadBySlug: query start")
 
 	query := fmt.Sprintf(
-		"SELECT id, slug, author, forum, created, title, message, votes FROM %s WHERE LOWER(slug) = LOWER('%s');",
-		ts.tableName, slug)
+		"SELECT id, slug, author, forum, created, title, message, votes FROM threads WHERE LOWER(slug) = LOWER('%s');",
+		slug)
 
 	// fmt.Println("GetThreadBySlug: query:", query)
 	// fmt.Println("-----------------------------start------------------------------####################")
@@ -266,8 +264,8 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 	}
 
 	query := fmt.Sprintf(
-		"UPDATE %s SET votes = votes %s WHERE id = %s returning votes;",
-		ts.tableName, addVoteStr, strconv.FormatUint(thread.ID, 10))
+		"UPDATE threads SET votes = votes %s WHERE id = %s returning votes;",
+		addVoteStr, strconv.FormatUint(thread.ID, 10))
 
 	// fmt.Println("-----------------------------start-2-----------------------------####################")
 	err := ts.db.QueryRow(query).Scan(&thread.Votes)

@@ -27,3 +27,6 @@ cmd/forum-server
 .idea/**
 .idea
 *.app
+
+#data
+*.dat.gz

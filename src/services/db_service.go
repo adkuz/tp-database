@@ -109,9 +109,7 @@ func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *sql.Rows
 
 	if err != nil {
 		DBError := err.(*pq.Error) // for Postgres DB driver
-		fmt.Println("SQL ERROR!")
-		fmt.Printf("%#v\n", DBError)
-		panic(err)
+		panic(DBError)
 	}
 	return res
 }
