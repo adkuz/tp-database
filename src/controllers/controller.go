@@ -672,8 +672,8 @@ func ServiceClear(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.WriteHeader(http.StatusOK)
 }
 
-func MakeForumAPI(pgdb *services.PostgresDatabase) router.ForumAPI {
-	forumAPI := make(router.ForumAPI)
+func MakeForumAPI(pgdb *services.PostgresDatabase) router.RouterAPI {
+	forumAPI := make(router.RouterAPI)
 
 	UserService = services.MakeUserService(pgdb)
 	ForumService = services.MakeForumService(pgdb)
