@@ -64,8 +64,8 @@ func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
 		panic(err)
 	}
 
-	fmt.Println("")
-	fmt.Println("IncThreadsCountBySlug:  slug =", slug)
+	// fmt.Println("")
+	// fmt.Println("IncThreadsCountBySlug:  slug =", slug)
 
 	_, err = insertQuery.Exec(slug)
 	if err != nil {

@@ -29,12 +29,10 @@ func (us *UserService) TableName() string {
 
 func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 
-	fmt.Println("UserService::GetUserIDByNickname:  nickname = '", nickname, "'")
+	// fmt.Println("UserService::GetUserIDByNickname:  nickname = '", nickname, "'")
 
 	query := fmt.Sprintf(
-		"SELECT nickname FROM %s WHERE LOWER(nickname) = LOWER('%s')",
-		//"SELECT id FROM %s WHERE nickname = '%s'",
-		uc.tableName, nickname)
+		"SELECT nickname FROM users WHERE LOWER(nickname) = LOWER('%s')", nickname)
 
 	rows := uc.db.Query(query)
 	defer rows.Close()
@@ -45,21 +43,14 @@ func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 		if err != nil {
 			panic(err)
 		}
-
-		fmt.Println("UserService::GetUserIDByNickname:  founded nickname = '", *nickname, "'")
-
 		return nickname
 	}
-
-	fmt.Println("UserService::GetUserIDByNickname:  user not found")
-
 	return nil
 }
 
 func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM %s WHERE LOWER(nickname) = LOWER('%s')",
-		uc.tableName, nickname)
+		"SELECT about, email, fullname, nickname FROM users WHERE LOWER(nickname) = LOWER('%s')", nickname)
 
 	rows := uc.db.Query(query)
 	defer rows.Close()
@@ -77,8 +68,7 @@ func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 
 func (uc *UserService) GetUserByEmail(email string) *models.User {
 	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM %s WHERE email = '%s'",
-		uc.tableName, email)
+		"SELECT about, email, fullname, nickname FROM users WHERE email = '%s'", email)
 
 	rows := uc.db.Query(query)
 	defer rows.Close()
@@ -98,8 +88,8 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 	users := make([]models.User, 0)
 
 	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM %s WHERE LOWER(email) = LOWER('%s') OR LOWER(nickname) = LOWER('%s')",
-		uc.tableName, email, nickname)
+		"SELECT about, email, fullname, nickname FROM users WHERE LOWER(email) = LOWER('%s') OR LOWER(nickname) = LOWER('%s')",
+		email, nickname)
 
 	rows := uc.db.Query(query)
 	defer rows.Close()
@@ -127,8 +117,7 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 		return false, conflictUsers
 	}
 
-	INSERT_QUERY :=
-		"insert into " + uc.tableName + " (nickname, about, email, fullname) values ($1, $2, $3, $4);"
+	INSERT_QUERY := "insert into users (nickname, about, email, fullname) values ($1, $2, $3, $4);"
 
 	insertQuery, err := uc.db.Prepare(INSERT_QUERY)
 	if err != nil {
@@ -146,16 +135,8 @@ func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
 
 func (uc *UserService) UpdateUser(user *models.User) {
 
-	/*fmt.Println("to update {about: ",user.About,
-	", email: ", user.Email,
-	", fullname: ", user.Fullname,
-	", nickname: ", user.Nickname,
-	"}")
-	*/
-
 	UPDATE_QUERY :=
-		"update " + uc.tableName + " SET about = $2, email = $3, fullname = $4 " +
-			"WHERE LOWER(nickname) = LOWER($1);"
+		"UPDATE users SET about = $2, email = $3, fullname = $4  WHERE LOWER(nickname) = LOWER($1);"
 
 	updateQuery, err := uc.db.Prepare(UPDATE_QUERY)
 	if err != nil {

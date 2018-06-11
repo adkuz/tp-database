@@ -9,8 +9,16 @@ drop table if exists votes cascade;
 
 
 drop index if exists threads_slug_idx;
+drop index if exists threads_author_idx;
+drop index if exists treads_forum_idx;
+drop index if exists treads_forum_created_idx;
+
 drop index if exists forums_slug_idx;
+drop index if exists forums_author_idx;
+
+
 drop index if exists users_slug_idx;
+drop index if exists users_email_idx;
 
 
 DROP INDEX IF EXISTS post_author_idx;
@@ -26,6 +34,10 @@ DROP INDEX IF EXISTS post_thread_tree_path;
 
 DROP INDEX IF EXISTS forum_users_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_slug_idx;
+DROP INDEX IF EXISTS forum_users_idx;
+
+drop INDEX IF EXISTS votes_thread_username_idx;
+
 
 
 CREATE TABLE IF NOT EXISTS users
@@ -36,7 +48,7 @@ CREATE TABLE IF NOT EXISTS users
   about    TEXT DEFAULT '',
   fullname VARCHAR(96) DEFAULT ''
 );
-
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(email);
 CREATE UNIQUE INDEX IF NOT EXISTS users_slug_idx ON users(lower(nickname));
 
 
@@ -54,7 +66,8 @@ CREATE TABLE IF NOT EXISTS forums
   author  VARCHAR references users(nickname)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(lower(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(slug);
+CREATE INDEX IF NOT EXISTS forums_author_idx ON forums(lower(author));
 
 
 CREATE TABLE threads
@@ -72,7 +85,9 @@ CREATE TABLE threads
 
   votes      INTEGER DEFAULT 0
 );
-
+CREATE INDEX IF NOT EXISTS treads_forum_idx ON threads(lower(forum));
+CREATE INDEX IF NOT EXISTS treads_forum_created_idx ON threads(lower(forum), created);
+CREATE INDEX IF NOT EXISTS threads_author_idx ON threads(lower(author));
 CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
 
 
@@ -114,16 +129,17 @@ CREATE TABLE votes
   UNIQUE(username, thread)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(thread, lower(username));
+
 
 CREATE TABLE forum_users
 (
   username  VARCHAR REFERENCES users(nickname) NOT NULL,
   forum CITEXT REFERENCES forums(slug) NOT NULL
 );
-
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
-CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(forum);
-
+CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(lower(forum));
+CREATE INDEX IF NOT EXISTS forum_users_idx ON forum_users(lower(username), lower(forum));
 
 
 

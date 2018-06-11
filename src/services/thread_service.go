@@ -283,7 +283,7 @@ func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uin
 	// fmt.Println("getVote: query start")
 
 	query := fmt.Sprintf(
-		"SELECT id, voice FROM votes WHERE thread = %s AND username = '%s';",
+		"SELECT id, voice FROM votes WHERE thread = %s AND lower(username) = lower('%s');",
 		strconv.FormatUint(threadId, 10), username)
 
 	// fmt.Println("getVote: query:", query)

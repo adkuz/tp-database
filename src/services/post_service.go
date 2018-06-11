@@ -148,8 +148,6 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 	INSERT_QUERY :=
 		"insert into posts (created, message, parent, author, forum, thread) values ($1, $2, $3, $4, $5, $6) returning id;"
 
-	// fmt.Println("AddThread: INSERT_QUERY:", INSERT_QUERY)
-
 	err := ps.db.QueryRow(INSERT_QUERY, post.Created, post.Message, post.Parent,
 		post.Author, post.Forum, post.Thread).Scan(&post.ID)
 
