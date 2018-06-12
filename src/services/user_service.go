@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/Alex-Kuz/tp-database/src/models"
 	"github.com/jackc/pgx"
 )
@@ -37,10 +35,9 @@ func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 
 	// fmt.Println("UserService::GetUserIDByNickname:  nickname = '", nickname, "'")
 
-	query := fmt.Sprintf(
-		"SELECT nickname FROM users WHERE LOWER(nickname) = LOWER('%s')", nickname)
+	query := "SELECT nickname::text FROM users WHERE LOWER(nickname) = LOWER($1)"
 
-	rows := uc.db.Query(query)
+	rows := uc.db.Query(query, nickname)
 	defer rows.Close()
 
 	for rows.Next() {
@@ -55,11 +52,10 @@ func (uc *UserService) GetUserIDByNickname(nickname string) *string {
 }
 
 func (uc *UserService) GetUserByNickname(nickname string) *models.User {
-	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM users WHERE LOWER(nickname) = LOWER('%s')", nickname)
+	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE LOWER(nickname) = LOWER($1)"
 
-	rows := uc.db.Query(query)
-	defer rows.Close()
+	rows := uc.db.Query(query, nickname)
+	// defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -73,11 +69,10 @@ func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 }
 
 func (uc *UserService) GetUserByEmail(email string) *models.User {
-	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM users WHERE email = '%s'", email)
+	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE lower(email) = lower($1)"
 
-	rows := uc.db.Query(query)
-	defer rows.Close()
+	rows := uc.db.Query(query, email)
+	// defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -93,11 +88,13 @@ func (uc *UserService) GetUserByEmail(email string) *models.User {
 func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.User {
 	users := make([]models.User, 0)
 
-	query := fmt.Sprintf(
-		"SELECT about, email, fullname, nickname FROM users WHERE LOWER(email) = LOWER('%s') OR LOWER(nickname) = LOWER('%s')",
-		email, nickname)
+	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2)"
 
 	resultRows := uc.db.Query(query, email, nickname)
+
+	if resultRows == nil {
+		return users
+	}
 
 	for resultRows.Next() {
 		user := new(models.User)

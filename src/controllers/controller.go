@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	_ "fmt"
 	"net/http"
 	"strconv"
@@ -109,6 +110,9 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 	nickname := mux.Vars(request)["nickname"]
 
+	UserService.GetDB().DataBase().Stat()
+	fmt.Print("----------------------------------------------------------")
+
 	user := UserService.GetUserByNickname(nickname)
 	if user == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
@@ -148,7 +152,10 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	fmt.Print("start user updating... ")
 	UserService.UpdateUser(&userInfo)
+	fmt.Println("Done")
+	fmt.Println("===============================================================================================")
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, userInfo)

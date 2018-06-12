@@ -113,7 +113,7 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 	}
 
 	query := fmt.Sprintf(
-		"SELECT id, coalesce(slug, ''), author, forum, created, title, message, votes FROM threads th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
+		"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM threads th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
 		slug, offsetStr, order, limitStr)
 
 	// fmt.Println("SelectThreads: query:", query)
@@ -145,7 +145,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 	// fmt.Println("GetThreadBySlug: query start")
 
 	query := fmt.Sprintf(
-		"SELECT id, slug, author, forum, created, title, message, votes FROM threads WHERE LOWER(slug) = LOWER('%s');",
+		"SELECT id, slug::text, author::text, forum::text, created, title::text, message::text, votes FROM threads WHERE LOWER(slug) = LOWER('%s');",
 		slug)
 
 	// fmt.Println("GetThreadBySlug: query:", query)
@@ -179,7 +179,7 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 	query := fmt.Sprintf(
-		"SELECT id, coalesce(slug, ''), author, forum, created, title, message, votes FROM %s WHERE id = %s;",
+		"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM %s WHERE id = %s;",
 		ts.tableName, strconv.FormatUint(id, 10))
 
 	rows := ts.db.Query(query)

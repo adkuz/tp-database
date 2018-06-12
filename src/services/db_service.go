@@ -110,6 +110,7 @@ func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *pgx.Rows
 	res, err := pgdb.Connections.Query(query, args...)
 
 	if err != nil {
+		pgdb.Connections.Stat()
 		fmt.Println("Query: " + query)
 		fmt.Print("Args: ")
 		fmt.Println(args)
