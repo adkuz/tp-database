@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 
 	"github.com/Alex-Kuz/tp-database/src/controllers"
 	"github.com/Alex-Kuz/tp-database/src/router"
@@ -21,7 +22,7 @@ func doesNotImplements(responceWriter http.ResponseWriter, request *http.Request
 var (
 	postgresConfig = services.Config{
 		Host:     "localhost",
-		Port:     "5432",
+		Port:     5432,
 		User:     "postgres",
 		Password: "12345",
 		DBName:   "forum_tp",
@@ -58,9 +59,14 @@ func readConfig(dbLine *string) services.Config {
 
 	fmt.Println(paramsMap)
 
+	port, err := strconv.ParseUint(paramsMap["port"], 10, 16)
+	if err != nil {
+		panic("Port error: not integer")
+	}
+
 	return services.Config{
 		Host:     paramsMap["host"],
-		Port:     paramsMap["port"],
+		Port:     uint16(port & 0xFFFF),
 		User:     paramsMap["username"],
 		Password: paramsMap["password"],
 		DBName:   paramsMap["db_name"],
@@ -77,21 +83,25 @@ func init() {
 
 	fmt.Println("postgresConfig: ", postgresConfig)
 
-	connectionString := services.MakeConnectionString(postgresConfig)
-	PostgresService = services.Connect(connectionString)
+	connectionConfig := services.MakeConnectionConfig(postgresConfig)
+	fmt.Println("prepared postgresConfig: ", connectionConfig)
+	PostgresService = services.Connect(connectionConfig)
 	PostgresService.Setup(SchemaFile)
 
 	fmt.Println("Successfuly connection")
 
-	fmt.Println("Initialization API...")
+	fmt.Print("Initialization API... ")
 	forumAPI := controllers.MakeForumAPI(&PostgresService)
+	fmt.Println("Done")
 
-	fmt.Println("Creating router...")
+	fmt.Print("Creating router... ")
 	ForumRouter = router.CreateRouter("/api", &forumAPI)
+	fmt.Println("Done")
 }
 
 func main() {
-	fmt.Println("Starting server...")
+
+	fmt.Println("Starting server <>")
 
 	log.Fatal(http.ListenAndServe(":5000", ForumRouter))
 }

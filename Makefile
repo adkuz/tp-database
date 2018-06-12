@@ -21,6 +21,14 @@ func-test:
 func-test-no-k:
 	./${tester} func --wait=50 -u http://localhost:5000/api/ -r tests/report.html
 
+fill-test:
+	./tests/tech-db-forum fill --timeout=900
+
+perform-test:
+	./tests/tech-db-forum perf --validate=0.1 --duration=60
+
+test_all: func-test fill-test perform-test
+
 show-report:
 	firefox file://$(shell pwd)/tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
 

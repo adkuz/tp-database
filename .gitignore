@@ -29,3 +29,7 @@ cmd/forum-server
 .vscode
 .vscode/**
 *.app
+
+#data
+*.dat.gz
+*.best.txt

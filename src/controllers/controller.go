@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	_ "fmt"
 	"net/http"
 	"strconv"
@@ -70,7 +69,7 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 
 	authorNickname := UserService.GetUserIDByNickname(forum.User)
 	if authorNickname == nil {
-		fmt.Println("CreateForum:  authorId = nil")
+		// fmt.Println("CreateForum:  authorId = nil")
 
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
@@ -161,8 +160,6 @@ func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 
 	slug := mux.Vars(request)["slug"]
 
-	fmt.Println("ForumDetails: slug =", slug)
-
 	forum := ForumService.GetForumBySlug(slug)
 	if forum == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
@@ -180,8 +177,6 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	slug := mux.Vars(request)["slug"]
-
-	fmt.Println("\n----------------------------------------------------------------------------")
 
 	thread := models.Thread{}
 	if err := json.NewDecoder(request.Body).Decode(&thread); err != nil {
@@ -214,19 +209,13 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 
 	if len(thread.Created) == 0 {
 		thread.Created = time.Now().UTC().Format(time.RFC3339)
-		fmt.Println("\nCreateThread: thread.Created =", thread.Created)
 	}
-
-	fmt.Println("CreateThread: thread{slug, created, author}:",
-		thread.Slug, thread.Created, thread.Author)
 
 	ThreadService.AddThread(&thread)
 	ForumService.IncThreadsCountBySlug(slug)
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, thread)
-
-	fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
@@ -236,8 +225,6 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 
 	forum := ForumService.GetForumBySlug(slug)
 	if forum == nil {
-		fmt.Println("CreateForum: forum with slug '", slug, "' not found")
-
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
 		return
@@ -298,29 +285,15 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		thread = ThreadService.GetThreadBySlug(threadSlug)
 	}
 
-	fmt.Println("\n----------------------------------------------------------------------------")
-
-	fmt.Println("CreatePost: slug_or_id", threadSlug, err)
-
 	if thread == nil {
-		fmt.Println("CreatePost: thread with slug_or_id '", threadSlug, "' not found")
-
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
-
 		return
 	}
 
 	postsArray := make(models.PostsArray, 0)
-
 	if err := json.NewDecoder(request.Body).Decode(&postsArray); err != nil {
 		panic(err)
-	}
-
-	fmt.Println("CreatePost: posts:")
-	for i := 0; i < len(postsArray); i++ {
-		fmt.Println("\t", i, ":", postsArray[i])
 	}
 
 	parentsToThreads := PostService.RequiredParents(postsArray)
@@ -328,12 +301,13 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	timeMoment := time.Now().UTC().Format(time.RFC3339)
 	threadId = thread.ID
 	forumSlug := thread.Forum
+
 	for i := 0; i < len(postsArray); i++ {
 		postsArray[i].Created = timeMoment
 		postsArray[i].Thread = threadId
 		postsArray[i].Forum = forumSlug
 
-		fmt.Println("\t", i, ":", postsArray[i])
+		// fmt.Println("\t", i, ":", postsArray[i])
 
 		if _, ok := parentsToThreads[postsArray[i].Parent]; ok {
 			if parent := PostService.GetPostById(postsArray[i].Parent); parent == nil {
@@ -358,8 +332,6 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, postsArray)
-
-	fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
@@ -375,17 +347,9 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 		thread = ThreadService.GetThreadBySlug(threadSlug)
 	}
 
-	fmt.Println("\n----------------------------------------------------------------------------")
-
-	fmt.Println("ThreadVote: slug_or_id", threadSlug, err)
-
 	if thread == nil {
-		fmt.Println("ThreadVote: thread with slug_or_id '", threadSlug, "' not found")
-
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
-
 		return
 	}
 
@@ -419,14 +383,9 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 		thread = ThreadService.GetThreadBySlug(threadSlug)
 	}
 
-	fmt.Println("\n----------------------------------------------------------------------------")
-	fmt.Println("ThreadVote: slug_or_id", threadSlug, err)
-
 	if thread == nil {
-		fmt.Println("ThreadVote: thread with slug_or_id '", threadSlug, "' not found")
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
 		return
 	}
 
@@ -455,8 +414,6 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, posts)
-
-	fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func ThreadUpdate(respWriter http.ResponseWriter, request *http.Request) {
@@ -506,10 +463,8 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 	forum := ForumService.GetForumBySlug(threadSlug)
 
 	if forum == nil {
-		fmt.Println("ForumUsers: firum with slug '", threadSlug, "' not found")
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"forum not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
 		return
 	}
 
@@ -530,9 +485,6 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, users)
-
-	fmt.Println(request.URL.String())
-	fmt.Println("----------------------------------------------------------------------------\n")
 }
 
 func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
@@ -546,10 +498,8 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 	post := PostService.GetPostById(id)
 
 	if post == nil {
-		fmt.Println("ForumUsers: Post with id '", id, "' not found")
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Post not found"})
-		fmt.Println("----------------------------------------------------------------------------\n")
 		return
 	}
 
@@ -562,26 +512,24 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	for i := 0; i < len(list); i++ {
-		fmt.Println(list[i])
+		// fmt.Println(list[i])
 		if list[i] == "user" {
-			fmt.Println(list, "USER")
+			// fmt.Println(list, "USER")
 			if user := UserService.GetUserByNickname(post.Author); user != nil {
 				postInfo.Author = user
 			}
 		} else if list[i] == "thread" {
-			fmt.Println(list, "THREAD")
+			// fmt.Println(list, "THREAD")
 			if thread := ThreadService.GetThreadById(post.Thread); thread != nil {
 				postInfo.Thread = thread
 			}
 		} else if list[i] == "forum" {
-			fmt.Println(list, "FORUM")
+			// fmt.Println(list, "FORUM")
 			if forum := ForumService.GetForumBySlug(post.Forum); forum != nil {
 				postInfo.Forum = forum
 			}
 		}
 	}
-
-	fmt.Println(postInfo)
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJsonBody(&respWriter, postInfo)
@@ -598,7 +546,6 @@ func PostUpdate(respWriter http.ResponseWriter, request *http.Request) {
 	post := PostService.GetPostById(id)
 
 	if post == nil {
-		fmt.Println("ForumUsers: Post with id '", id, "' not found")
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Post not found"})
 		return
