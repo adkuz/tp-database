@@ -30,3 +30,4 @@ cmd/forum-server
 
 #data
 *.dat.gz
+*.best.txt

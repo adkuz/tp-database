@@ -41,6 +41,7 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 	}
 
 	thread.Created = t.UTC().Format(time.RFC3339Nano)
+
 	// fmt.Println("AddThread: since: ", thread.Created)
 
 	// fmt.Println("AddThread: INSERT_QUERY: ", INSERT_QUERY)
@@ -125,8 +126,18 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 
 	for rows.Next() {
 		var thread models.Thread
-		err := rows.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum, &thread.Created,
-			&thread.Title, &thread.Message, &thread.Votes)
+		var selectedTime time.Time
+		err := rows.Scan(
+			&thread.ID,
+			&thread.Slug,
+			&thread.Author,
+			&thread.Forum,
+			&selectedTime,
+			&thread.Title,
+			&thread.Message,
+			&thread.Votes,
+		)
+		thread.Created = selectedTime.UTC().Format(time.RFC3339Nano)
 		if err != nil {
 			panic(err)
 		}
@@ -157,16 +168,18 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 
 	for rows.Next() {
 		thread := new(models.Thread)
+		var selectedTime time.Time
 		err := rows.Scan(
 			&thread.ID,
 			&thread.Slug,
 			&thread.Author,
 			&thread.Forum,
-			&thread.Created,
+			&selectedTime,
 			&thread.Title,
 			&thread.Message,
 			&thread.Votes,
 		)
+		thread.Created = selectedTime.UTC().Format(time.RFC3339Nano)
 		if err != nil {
 			fmt.Println(err)
 			panic(err)
@@ -187,17 +200,18 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 	for rows.Next() {
 		thread := new(models.Thread)
+		var selectedTime time.Time
 		err := rows.Scan(
 			&thread.ID,
 			&thread.Slug,
 			&thread.Author,
 			&thread.Forum,
-			&thread.Created,
+			&selectedTime,
 			&thread.Title,
 			&thread.Message,
 			&thread.Votes,
 		)
-
+		thread.Created = selectedTime.UTC().Format(time.RFC3339Nano)
 		if err != nil {
 			fmt.Println("GetThreadBySlug: query:", query)
 			fmt.Println(err)
@@ -211,8 +225,6 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.Thread {
 
-	// fmt.Println("Vote: query start")
-
 	addVoteStr := "+ 1"
 	if vote.Voice == -1 {
 		addVoteStr = "- 1"
@@ -221,13 +233,9 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 	voice, voteId := ts.getVote(vote.Nickname, thread.ID)
 	if voice != nil {
 		if *voice == vote.Voice {
-			// fmt.Println("Vote: this vote is existed")
 			return thread
 		} else {
 			voiceUpdate := "UPDATE votes SET voice = $1 WHERE id = $2;"
-
-			// fmt.Println("<< Vote  update: vote, thread.id:", vote, thread.ID)
-			// fmt.Println("-----------------------------start------------------------------####################")
 
 			rows := ts.db.Query(voiceUpdate, vote.Voice, voteId)
 			defer rows.Close()
@@ -239,9 +247,6 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 	} else {
 
 		voteInsert := "INSERT INTO votes (username, voice, thread) VALUES ($1, $2, $3) returning id;"
-
-		// fmt.Println("<< Vote  insert: vote, thread.id:", vote, thread.ID)
-		// fmt.Println("-----------------------------start------------------------------####################")
 
 		var id uint64
 		err := ts.db.QueryRow(voteInsert, vote.Nickname, vote.Voice, thread.ID).Scan(&id)
@@ -268,19 +273,13 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 }
 
 func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uint64) {
-	// fmt.Println("getVote: query start")
 
 	query := fmt.Sprintf(
 		"SELECT id, voice FROM votes WHERE thread = %s AND lower(username) = lower('%s');",
 		strconv.FormatUint(threadId, 10), username)
 
-	// fmt.Println("getVote: query:", query)
-	// fmt.Println("-----------------------------start------------------------------####################")
-
 	rows := ts.db.Query(query)
 	defer rows.Close()
-
-	// fmt.Println("------------------------------end-------------------------------####################")
 
 	for rows.Next() {
 		voice := new(int32)

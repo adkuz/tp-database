@@ -12,6 +12,7 @@ install:
 script:
   - make func-test
   - make fill-test
+  - make perform-test
 
 after_script:
   - make stop

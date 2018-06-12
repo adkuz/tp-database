@@ -90,15 +90,18 @@ func init() {
 
 	fmt.Println("Successfuly connection")
 
-	fmt.Println("Initialization API...")
+	fmt.Print("Initialization API... ")
 	forumAPI := controllers.MakeForumAPI(&PostgresService)
+	fmt.Println("Done")
 
-	fmt.Println("Creating router...")
+	fmt.Print("Creating router... ")
 	ForumRouter = router.CreateRouter("/api", &forumAPI)
+	fmt.Println("Done")
 }
 
 func main() {
-	fmt.Println("Starting server...")
+
+	fmt.Println("Starting server <>")
 
 	log.Fatal(http.ListenAndServe(":5000", ForumRouter))
 }

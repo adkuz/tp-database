@@ -55,7 +55,7 @@ func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE LOWER(nickname) = LOWER($1)"
 
 	rows := uc.db.Query(query, nickname)
-	// defer rows.Close()
+	defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -72,7 +72,7 @@ func (uc *UserService) GetUserByEmail(email string) *models.User {
 	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE lower(email) = lower($1)"
 
 	rows := uc.db.Query(query, email)
-	// defer rows.Close()
+	defer rows.Close()
 
 	for rows.Next() {
 		user := new(models.User)
@@ -91,10 +91,7 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 	query := "SELECT about::text, email::text, fullname::text, nickname::text FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2)"
 
 	resultRows := uc.db.Query(query, email, nickname)
-
-	if resultRows == nil {
-		return users
-	}
+	defer resultRows.Close()
 
 	for resultRows.Next() {
 		user := new(models.User)
@@ -105,10 +102,12 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 
 		users = append(users, *user)
 	}
+
 	return users
 }
 
 func (uc *UserService) AddUser(user *models.User) (bool, []models.User) {
+
 	conflictUsers := uc.GetUsersByEmailOrNick(user.Email, user.Nickname)
 
 	if len(conflictUsers) == 2 && conflictUsers[0] == conflictUsers[1] {

@@ -21,10 +21,9 @@ func (fs *ForumService) TableName() string {
 }
 
 func (fs *ForumService) GetForumBySlug(slug string) *models.Forum {
-	query := fmt.Sprintf(
-		"SELECT slug, author, title, threads, posts FROM forums WHERE LOWER(slug) = LOWER('%s')", slug)
+	query := "SELECT slug::text, author::text, title::text, threads, posts FROM forums WHERE LOWER(slug) = LOWER($1)"
 
-	rows := fs.db.Query(query)
+	rows := fs.db.Query(query, slug)
 	defer rows.Close()
 
 	for rows.Next() {
@@ -39,10 +38,9 @@ func (fs *ForumService) GetForumBySlug(slug string) *models.Forum {
 }
 
 func (fs *ForumService) SlugBySlug(slug string) *string {
-	query := fmt.Sprintf(
-		"SELECT slug FROM forums WHERE LOWER(slug) = LOWER('%s')", slug)
+	query := "SELECT slug::text FROM forums WHERE LOWER(slug) = LOWER($1)"
 
-	rows := fs.db.Query(query)
+	rows := fs.db.Query(query, slug)
 	defer rows.Close()
 
 	for rows.Next() {
@@ -65,9 +63,6 @@ func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
 		panic(err)
 	}
 
-	// fmt.Println("")
-	// fmt.Println("IncThreadsCountBySlug:  slug =", slug)
-
 	return true
 }
 
@@ -84,8 +79,6 @@ func (fs *ForumService) AddForum(forum *models.Forum) (bool, *models.Forum) {
 	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
 		panic(err)
 	}
-
-	// fmt.Println("AddForum:  forum.User =", forum.User)
 
 	return true, forum
 }
@@ -114,11 +107,9 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 	}
 
 	query := fmt.Sprintf(
-		"SELECT nickname, fullname, about, email FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)"+
+		"SELECT nickname::text, fullname::text, about::text, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)"+
 			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(u.nickname) %s %s;",
 		forum.Slug, sinceStr, order, limitStr)
-
-	// fmt.Println("GetUsers: QUERY:", query)
 
 	rows := fs.db.Query(query)
 	defer rows.Close()
@@ -126,7 +117,6 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 	users := make([]models.User, 0)
 
 	for rows.Next() {
-		//var parent uint64
 		var user models.User
 		err := rows.Scan(
 			&user.Nickname,
@@ -134,7 +124,6 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 			&user.About,
 			&user.Email,
 		)
-		fmt.Println(user)
 		if err != nil {
 			panic(err)
 		}

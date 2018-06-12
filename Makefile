@@ -25,7 +25,7 @@ fill-test:
 	./tests/tech-db-forum fill --timeout=900
 
 perform-test:
-	./tests/tech-db-forum perf --timeout=60
+	./tests/tech-db-forum perf --validate=0.1 --duration=60
 
 test_all: func-test fill-test perform-test
 

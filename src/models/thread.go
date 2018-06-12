@@ -1,6 +1,5 @@
 package models
 
-
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -12,28 +11,25 @@ import (
 //type ThreadDateTime *strfmt.DateTime
 
 type Thread struct {
-
-	Author  string `json:"author"`
+	Author string `json:"author"`
 
 	Created string `json:"created,omitempty"`
 
-	Forum   string `json:"forum,omitempty"`
+	Forum string `json:"forum,omitempty"`
 
-	ID      uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	Message string `json:"message"`
 
 	// Pattern: ^(\d|\w|-|_)*(\w|-|_)(\d|\w|-|_)*$
-	Slug    string `json:"slug,omitempty"`
+	Slug string `json:"slug,omitempty"`
 
-	Title   string `json:"title"`
+	Title string `json:"title"`
 
-	Votes   int64  `json:"votes,omitempty"`
+	Votes int64 `json:"votes,omitempty"`
 }
 
-
 type ThreadsArray []Thread
-
 
 func (m *Thread) Validate(formats strfmt.Registry) error {
 	var res []error
