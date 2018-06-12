@@ -113,8 +113,9 @@ create table if not exists posts
 
 
 CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
+CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);
 CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(parent, thread, id);
-
+git 
 
 CREATE TABLE votes
 (
