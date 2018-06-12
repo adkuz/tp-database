@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx"
 )
 
 type ThreadService struct {
@@ -57,17 +57,10 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 		"insert into forum_users (username, forum) select $1, $2 " +
 			"where not exists (select * from forum_users where lower(username) = lower($3) and lower(forum) = lower($4));"
 
-	insertQueryUserForum, err := ts.db.Prepare(insertQueryForumUsers)
-	defer insertQueryUserForum.Close()
-	if err != nil {
-		panic(err)
-	}
+	resultRows := ts.db.QueryRow(insertQueryForumUsers, thread.Author, thread.Forum, thread.Author, thread.Forum)
 
-	_, err = insertQueryUserForum.Exec(thread.Author, thread.Forum, thread.Author, thread.Forum)
-	if err != nil {
-		DBError := err.(*pq.Error) // for Postgres DB driver
-		fmt.Println("SQL ERROR!")
-		fmt.Printf("%#v\n", DBError)
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
 
@@ -78,17 +71,12 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 
 func (ts *ThreadService) UpdateThread(thread *models.Thread) *models.Thread {
 
-	update :=
-		"update threads SET title = $2, message = $3 WHERE id = $1;"
+	update := "update threads SET title = $2, message = $3 WHERE id = $1;"
 
-	updateQuery, err := ts.db.Prepare(update)
-	if err != nil {
-		panic(err)
-	}
-	defer updateQuery.Close()
+	resultRows := ts.db.QueryRow(update, thread.ID, thread.Title, thread.Message)
 
-	_, err = updateQuery.Exec(thread.ID, thread.Title, thread.Message)
-	if err != nil {
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
 

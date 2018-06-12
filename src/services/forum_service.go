@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
+	"github.com/jackc/pgx"
 )
 
 type ForumService struct {
@@ -56,22 +57,16 @@ func (fs *ForumService) SlugBySlug(slug string) *string {
 }
 
 func (fs *ForumService) IncThreadsCountBySlug(slug string) bool {
-	UPDATE_QUERY := "UPDATE forums SET threads = threads + 1 WHERE LOWER($1) = LOWER(slug);"
+	UPDATE_QUERY := "UPDATE forums SET threads = threads + 1 WHERE LOWER(slug) = LOWER($1);"
 
-	insertQuery, err := fs.db.Prepare(UPDATE_QUERY)
-	//defer insertQuery.Close()
-	if err != nil {
+	resultRows := fs.db.QueryRow(UPDATE_QUERY, slug)
+
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
 		panic(err)
 	}
 
 	// fmt.Println("")
 	// fmt.Println("IncThreadsCountBySlug:  slug =", slug)
-
-	_, err = insertQuery.Exec(slug)
-	if err != nil {
-		fmt.Println("AddForum:  error:", err.Error())
-		panic(err)
-	}
 
 	return true
 }
@@ -84,19 +79,13 @@ func (fs *ForumService) AddForum(forum *models.Forum) (bool, *models.Forum) {
 
 	INSERT_QUERY := "insert into forums (slug, author, title, threads, posts) values ($1, $2, $3, $4, $5);"
 
-	insertQuery, err := fs.db.Prepare(INSERT_QUERY)
-	defer insertQuery.Close()
-	if err != nil {
+	resultRows := fs.db.QueryRow(INSERT_QUERY, forum.Slug, forum.User, forum.Title, forum.Threads, forum.Posts)
+
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
 		panic(err)
 	}
 
-	fmt.Println("AddForum:  forum.User =", forum.User)
-
-	_, err = insertQuery.Exec(forum.Slug, forum.User, forum.Title, forum.Threads, forum.Posts)
-	if err != nil {
-		fmt.Println("AddForum:  error:", err.Error())
-		panic(err)
-	}
+	// fmt.Println("AddForum:  forum.User =", forum.User)
 
 	return true, forum
 }

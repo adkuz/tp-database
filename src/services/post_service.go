@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
+	"github.com/jackc/pgx"
 )
 
 type PostService struct {
@@ -162,15 +163,10 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 		"insert into forum_users (username, forum) select $1, $2 " +
 			"where not exists (select * from forum_users where lower(username) = lower($3) and lower(forum) = lower($4));"
 
-	insertQueryUserForum, err := ps.db.Prepare(insertQueryForumUsers)
-	defer insertQueryUserForum.Close()
-	if err != nil {
-		panic(err)
-	}
+	resultRows := ps.db.QueryRow(insertQueryForumUsers, post.Author, post.Forum, post.Author, post.Forum)
 
-	_, err = insertQueryUserForum.Exec(post.Author, post.Forum, post.Author, post.Forum)
-	if err != nil {
-		fmt.Println("AddForum:  error:", err.Error())
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
 
@@ -352,17 +348,11 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread,
 }
 
 func (ps *PostService) UpdatePost(post *models.Post) *models.Post {
-	update :=
-		"update posts SET message = $2, is_edited = true WHERE id = $1;"
+	update := "update posts SET message = $2, is_edited = true WHERE id = $1;"
 
-	updateQuery, err := ps.db.Prepare(update)
-	if err != nil {
-		panic(err)
-	}
-	defer updateQuery.Close()
-
-	_, err = updateQuery.Exec(post.ID, post.Message)
-	if err != nil {
+	resultRows := ps.db.QueryRow(update, post.ID, post.Message)
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		// TODO: move conflicts
 		panic(err)
 	}
 

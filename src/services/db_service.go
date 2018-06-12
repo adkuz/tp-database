@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx"
-	"github.com/lib/pq"
 
 	"os"
 )
@@ -59,10 +58,9 @@ func Connect(connectionConfig pgx.ConnConfig) PostgresDatabase {
 	conns, err := pgx.NewConnPool(
 		pgx.ConnPoolConfig{
 			ConnConfig:     connectionConfig,
-			MaxConnections: 50,
+			MaxConnections: 42,
 		},
 	)
-
 	if err != nil {
 		fmt.Println("DB connection error: ", err)
 		panic(err)
@@ -112,8 +110,11 @@ func (pgdb *PostgresDatabase) Query(query string, args ...interface{}) *pgx.Rows
 	res, err := pgdb.Connections.Query(query, args...)
 
 	if err != nil {
-		DBError := err.(*pq.Error) // for Postgres DB driver
-		panic(DBError)
+		fmt.Println("Query: " + query)
+		fmt.Print("Args: ")
+		fmt.Println(args)
+		fmt.Println(err)
+		panic(err)
 	}
 	return res
 }

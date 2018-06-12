@@ -97,12 +97,11 @@ func (uc *UserService) GetUsersByEmailOrNick(email, nickname string) []models.Us
 		"SELECT about, email, fullname, nickname FROM users WHERE LOWER(email) = LOWER('%s') OR LOWER(nickname) = LOWER('%s')",
 		email, nickname)
 
-	rows := uc.db.Query(query)
-	defer rows.Close()
+	resultRows := uc.db.Query(query, email, nickname)
 
-	for rows.Next() {
+	for resultRows.Next() {
 		user := new(models.User)
-		err := rows.Scan(&user.About, &user.Email, &user.Fullname, &user.Nickname)
+		err := resultRows.Scan(&user.About, &user.Email, &user.Fullname, &user.Nickname)
 		if err != nil {
 			panic(err)
 		}
