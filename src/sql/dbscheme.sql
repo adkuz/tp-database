@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS users
   about    TEXT DEFAULT '',
   fullname VARCHAR(96) DEFAULT ''
 );
-CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(lower(email));
 CREATE UNIQUE INDEX IF NOT EXISTS users_slug_idx ON users(lower(nickname));
 
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS forums
   author  VARCHAR references users(nickname)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(slug);
+CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(lower(slug));
 CREATE INDEX IF NOT EXISTS forums_author_idx ON forums(lower(author));
 
 
@@ -85,10 +85,12 @@ CREATE TABLE threads
 
   votes      INTEGER DEFAULT 0
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
+
 CREATE INDEX IF NOT EXISTS treads_forum_idx ON threads(lower(forum));
 CREATE INDEX IF NOT EXISTS treads_forum_created_idx ON threads(lower(forum), created);
 CREATE INDEX IF NOT EXISTS threads_author_idx ON threads(lower(author));
-CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
 
 
 create table if not exists posts
@@ -109,15 +111,10 @@ create table if not exists posts
   thread    bigint references threads(id)
 );
 
-CREATE INDEX IF NOT EXISTS post_author_idx ON posts(lower(author));
-CREATE INDEX IF NOT EXISTS post_forum_idx ON posts(forum);
-CREATE INDEX IF NOT EXISTS post_thread_idx ON posts(thread);
-CREATE INDEX IF NOT EXISTS post_created_idx ON posts(created);
+
 CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
-CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id);
 CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(parent, thread, id);
-CREATE INDEX IF NOT EXISTS post_id_thread_idx ON posts(id, thread);
-CREATE INDEX IF NOT EXISTS post_thread_tree_path ON posts(thread, tree_path);
+
 
 CREATE TABLE votes
 (

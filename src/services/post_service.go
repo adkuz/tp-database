@@ -105,11 +105,9 @@ func (ps *PostService) GetAllParents(threadId uint64,
 
 func (ps *PostService) GetPostById(id uint64) *models.Post {
 
-	query := fmt.Sprintf(
-		"SELECT id, created, is_edited, parent, message::text, author::text, forum::text, thread, tree_path FROM posts WHERE id = %s;",
-		strconv.FormatUint(id, 10))
+	query := "SELECT id, created, is_edited, parent, message::text, author::text, forum::text, thread, tree_path FROM posts WHERE id = $1;"
 
-	rows := ps.db.Query(query)
+	rows := ps.db.Query(query, strconv.FormatUint(id, 10))
 	defer rows.Close()
 
 	for rows.Next() {
