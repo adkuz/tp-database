@@ -114,8 +114,11 @@ create table if not exists posts
 
 CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
 CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);
-CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(parent, thread, id);
-git 
+CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(created, thread, id);
+
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread, id);
+CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --GetPostsFlat
+
 
 CREATE TABLE votes
 (
@@ -133,11 +136,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(thread, low
 CREATE TABLE forum_users
 (
   username  VARCHAR REFERENCES users(nickname) NOT NULL,
-  forum CITEXT REFERENCES forums(slug) NOT NULL
+  forum CITEXT REFERENCES forums(slug) NOT NULL,
+
+  UNIQUE(username, forum)
 );
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
 CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(lower(forum));
-CREATE INDEX IF NOT EXISTS forum_users_idx ON forum_users(lower(username), lower(forum));
 
 
 

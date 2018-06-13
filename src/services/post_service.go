@@ -141,10 +141,9 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 	}
 
 	insertQueryForumUsers :=
-		"insert into forum_users (username, forum) select $1, $2 " +
-			"where not exists (select * from forum_users where lower(username) = lower($3) and lower(forum) = lower($4));"
+		"insert into forum_users (username, forum) values ($1, $2) ON conflict (username, forum) do nothing;"
 
-	resultRows := ps.db.QueryRow(insertQueryForumUsers, post.Author, post.Forum, post.Author, post.Forum)
+	resultRows := ps.db.QueryRow(insertQueryForumUsers, post.Author, post.Forum)
 
 	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
 		// TODO: move conflicts
@@ -154,8 +153,7 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 	return true, post
 }
 
-func (ps *PostService) GetPostsFlat(thread *models.Thread,
-	limit, since string, desc bool) []models.Post {
+func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, desc bool) []models.Post {
 
 	sinceStr := ""
 	if since != "" {

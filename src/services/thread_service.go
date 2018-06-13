@@ -55,10 +55,9 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 	}
 
 	insertQueryForumUsers :=
-		"insert into forum_users (username, forum) select $1, $2 " +
-			"where not exists (select * from forum_users where lower(username) = lower($3) and lower(forum) = lower($4));"
+		"insert into forum_users (username, forum) values ($1, $2) ON conflict (username, forum) do nothing;"
 
-	resultRows := ts.db.QueryRow(insertQueryForumUsers, thread.Author, thread.Forum, thread.Author, thread.Forum)
+	resultRows := ts.db.QueryRow(insertQueryForumUsers, thread.Author, thread.Forum)
 
 	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
 		// TODO: move conflicts
