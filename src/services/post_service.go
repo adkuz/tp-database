@@ -37,12 +37,13 @@ func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
 	}
 
 	for i := 0; i < len(posts); i++ {
-
 		for p := 0; p < len(posts); p++ {
+
 			if posts[i].Parent == posts[p].ID {
 				pt := ParentThread{posts[i].Parent, posts[i].Thread}
 				parents[pt] = false
 			}
+
 		}
 	}
 
@@ -57,8 +58,7 @@ func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
 	return requiredParents
 }
 
-func (ps *PostService) GetAllParents(threadId uint64,
-	limit uint64, since string, desc bool) []uint64 {
+func (ps *PostService) GetAllParents(threadId uint64, limit uint64, since string, desc bool) []uint64 {
 
 	sinceStr := ""
 	if since != "" {
@@ -209,8 +209,7 @@ func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, 
 	return posts
 }
 
-func (ps *PostService) GetPostsTreeSort(thread *models.Thread,
-	limit, since string, desc bool) []models.Post {
+func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since string, desc bool) []models.Post {
 
 	sinceStr := ""
 	if since != "" {
@@ -294,6 +293,12 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, sinc
 	posts := make([]models.Post, 0)
 
 	for i := 0; i < len(parents); i++ {
+
+		/*
+			three_path
+			three_path[1]
+			thread
+		*/
 
 		query := fmt.Sprintf(
 			"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts WHERE tree_path[1] = %s AND thread = %s%s ORDER BY tree_path, id;",

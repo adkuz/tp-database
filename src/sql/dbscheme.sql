@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS users
   fullname VARCHAR(96) DEFAULT ''
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(lower(email));
-CREATE UNIQUE INDEX IF NOT EXISTS users_slug_idx ON users(lower(nickname));
+CREATE UNIQUE INDEX IF NOT EXISTS users_nickname_idx ON users(lower(nickname));
 
 
 CREATE TABLE IF NOT EXISTS forums
@@ -138,7 +138,7 @@ CREATE TABLE forum_users
 
 CREATE UNIQUE INDEX IF NOT EXISTS forum_users_forum_username_idx ON forum_users(lower(forum), lower(username));
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
-
+CREATE INDEX IF NOT EXISTS forum_users_forum_idx ON forum_users(lower(forum));
 
 
 

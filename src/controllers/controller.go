@@ -307,6 +307,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		postsArray[i].Thread = threadId
 		postsArray[i].Forum = forumSlug
 
+		// TODO: many to one
 		if _, ok := parentsToThreads[postsArray[i].Parent]; ok {
 			if parent := PostService.GetPostById(postsArray[i].Parent); parent == nil {
 				respWriter.WriteHeader(http.StatusConflict)

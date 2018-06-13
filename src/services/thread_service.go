@@ -259,14 +259,11 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 		"UPDATE threads SET votes = votes %s WHERE id = %s returning votes;",
 		addVoteStr, strconv.FormatUint(thread.ID, 10))
 
-	// fmt.Println("-----------------------------start-2-----------------------------####################")
 	err := ts.db.QueryRow(query).Scan(&thread.Votes)
 	if err != nil {
 		fmt.Println("Vote:  error:", err.Error())
 		panic(err)
 	}
-
-	// fmt.Println("------------------------------end-------------------------------####################")
 
 	return thread
 }
