@@ -32,6 +32,7 @@ test_all: func-test fill-test perform-test
 
 
 
+#--------------------------------------------------------------------------------------------------------------------------------
 show-report:
 	firefox file://$(shell pwd)/tests/report.html https://tech-db-forum.bozaro.ru/ & echo "report and api-list"
 
