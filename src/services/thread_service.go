@@ -55,7 +55,7 @@ func (ts *ThreadService) AddThread(thread *models.Thread) (bool, *models.Thread)
 	}
 
 	insertQueryForumUsers :=
-		"insert into forum_users (username, forum) values ($1, $2) ON conflict (username, forum) do nothing;"
+		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;"
 
 	resultRows := ts.db.QueryRow(insertQueryForumUsers, thread.Author, thread.Forum)
 

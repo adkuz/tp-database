@@ -31,11 +31,6 @@ DROP INDEX IF EXISTS post_created_thread_id_idx;
 DROP INDEX IF EXISTS post_id_thread_idx;
 DROP INDEX IF EXISTS post_thread_tree_path;
 
-
-DROP INDEX IF EXISTS forum_users_username_idx;
-DROP INDEX IF EXISTS forum_users_forum_slug_idx;
-DROP INDEX IF EXISTS forum_users_idx;
-
 drop INDEX IF EXISTS votes_thread_username_idx;
 
 
@@ -138,13 +133,12 @@ CREATE TABLE forum_users
   username  VARCHAR REFERENCES users(nickname) NOT NULL,
   forum CITEXT REFERENCES forums(slug) NOT NULL,
 
-  UNIQUE(username, forum)
+  UNIQUE(forum, username)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username), lower(forum));
-
+CREATE UNIQUE INDEX IF NOT EXISTS forum_users_forum_username_idx ON forum_users(lower(forum), lower(username));
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
-CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(lower(forum));
+
 
 
 
@@ -155,7 +149,6 @@ DECLARE
 BEGIN
   parent_id := new.parent;
   new.tree_path := array_append((SELECT tree_path from posts WHERE id = parent_id), new.id);
---  UPDATE forums SET posts = posts + 1 WHERE LOWER(slug) = LOWER(new.forum);
   RETURN new;
 END;
 $fix_path$ LANGUAGE plpgsql;

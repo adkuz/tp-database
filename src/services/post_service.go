@@ -141,7 +141,7 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 	}
 
 	insertQueryForumUsers :=
-		"insert into forum_users (username, forum) values ($1, $2) ON conflict (username, forum) do nothing;"
+		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;"
 
 	resultRows := ps.db.QueryRow(insertQueryForumUsers, post.Author, post.Forum)
 

@@ -64,6 +64,8 @@ WORKDIR $GOPATH/src/github.com/Alex-Kuz/tp-database
 ADD . $GOPATH/src/github.com/Alex-Kuz/tp-database/
 
 
+ENV GO_DEEP "psql -U docker -h 127.0.0.1 -d forum_tp"
+
 RUN chmod +x ./scripts/*
 
 RUN ./scripts/build.sh

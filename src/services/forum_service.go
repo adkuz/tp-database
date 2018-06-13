@@ -87,7 +87,7 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 
 	sinceStr := ""
 	if since != "" {
-		sinceStr = " AND LOWER(u.nickname) "
+		sinceStr = " AND LOWER(uf.username) "
 		if desc {
 			sinceStr += "< "
 		} else {
@@ -108,8 +108,12 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 
 	query := fmt.Sprintf(
 		"SELECT nickname::text, fullname::text, about::text, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)"+
-			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(u.nickname) %s %s;",
+			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(uf.username) %s %s;",
 		forum.Slug, sinceStr, order, limitStr)
+
+	/*
+		SELECT nickname::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username) WHERE LOWER(uf.forum) = LOWER('for') AND LOWER(uf.nickname) > LOWER('nick1') ORDER BY LOWER(uf.nickname);
+	*/
 
 	rows := fs.db.Query(query)
 	defer rows.Close()
