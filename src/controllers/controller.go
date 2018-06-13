@@ -328,6 +328,8 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		PostService.AddPost(&postsArray[i])
 	}
 
+	ForumService.IncrementPostsCountBySlug(thread.Forum, len(postsArray))
+
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, postsArray)
 }

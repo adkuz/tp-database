@@ -132,3 +132,14 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 	}
 	return users
 }
+
+func (fs *ForumService) IncrementPostsCountBySlug(forumSlug string, postsCount int) {
+
+	updateQuery := "UPDATE forums SET posts = posts + $2 WHERE LOWER(slug) = LOWER($1);"
+
+	resultRows := fs.db.QueryRow(updateQuery, forumSlug, postsCount)
+
+	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
+		panic(err)
+	}
+}

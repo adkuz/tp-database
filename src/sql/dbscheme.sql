@@ -140,6 +140,9 @@ CREATE TABLE forum_users
 
   UNIQUE(username, forum)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username), lower(forum));
+
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
 CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON forum_users(lower(forum));
 
@@ -152,7 +155,7 @@ DECLARE
 BEGIN
   parent_id := new.parent;
   new.tree_path := array_append((SELECT tree_path from posts WHERE id = parent_id), new.id);
-  UPDATE forums SET posts = posts + 1 WHERE LOWER(slug) = LOWER(new.forum);
+--  UPDATE forums SET posts = posts + 1 WHERE LOWER(slug) = LOWER(new.forum);
   RETURN new;
 END;
 $fix_path$ LANGUAGE plpgsql;
