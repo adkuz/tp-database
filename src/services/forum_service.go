@@ -113,7 +113,8 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 	)
 
 	/*
-		SELECT nickname::text, fullname::text, about::text, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)  WHERE LOWER(uf.forum) = LOWER('s')  AND LOWER(uf.username) > LOWER('k') ORDER BY LOWER(uf.username);
+		"SELECT nickname, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)  WHERE LOWER(uf.forum) = LOWER('p5I1X2Yi7VivJ.Zod') ORDER BY LOWER(uf.username) ASC LIMIT 100;"
+			SELECT nickname::text, fullname::text, about::text, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)  WHERE LOWER(uf.forum) = LOWER('s')  AND LOWER(uf.username) > LOWER('k') ORDER BY LOWER(uf.username) ASC LIMIT 100;
 
 	*/
 

@@ -6,7 +6,7 @@ drop table if exists forums cascade;
 drop table if exists threads cascade;
 drop table if exists posts cascade;
 drop table if exists votes cascade;
-
+drop table if exists forum_users cascade;
 
 drop index if exists threads_slug_idx;
 drop index if exists threads_author_idx;
@@ -16,9 +16,8 @@ drop index if exists treads_forum_created_idx;
 drop index if exists forums_slug_idx;
 drop index if exists forums_author_idx;
 
-
 drop index if exists users_slug_idx;
-drop index if exists users_email_idx;
+drop index if exists users_nickname_idx;
 
 
 DROP INDEX IF EXISTS post_author_idx;
@@ -32,6 +31,11 @@ DROP INDEX IF EXISTS post_id_thread_idx;
 DROP INDEX IF EXISTS post_thread_tree_path;
 
 drop INDEX IF EXISTS votes_thread_username_idx;
+
+
+DROP INDEX IF EXISTS forum_users_forum_username_idx;
+DROP INDEX IF EXISTS forum_users_username_idx;
+DROP INDEX IF EXISTS forum_users_forum_idx;
 
 
 
@@ -149,6 +153,7 @@ DECLARE
 BEGIN
   parent_id := new.parent;
   new.tree_path := array_append((SELECT tree_path from posts WHERE id = parent_id), new.id);
+ -- insert into forum_users (forum, username) values (new.forum, new.author) ON conflict (forum, username) do nothing;
   RETURN new;
 END;
 $fix_path$ LANGUAGE plpgsql;

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/Alex-Kuz/tp-database/src/models"
 	"github.com/jackc/pgx"
 )
@@ -66,6 +68,41 @@ func (uc *UserService) GetUserByNickname(nickname string) *models.User {
 		return user
 	}
 	return nil
+}
+
+type nicknameSet map[string]bool
+
+func (set nicknameSet) String() (s string) {
+	sep := ""
+	for str, _ := range set {
+		s += sep
+		sep = ", "
+		s += fmt.Sprintf("LOWER('%s')", str)
+	}
+	return
+}
+
+func (uc *UserService) GetUsersByNicknamesArray(nicknames map[string]bool) []string {
+
+	query := "SELECT nickname::text FROM users WHERE LOWER(nickname) = ANY (ARRAY[" + nicknameSet(nicknames).String() + "])"
+
+	// fmt.Println(nicknames)
+	// fmt.Println(query)
+
+	rows := uc.db.Query(query)
+	defer rows.Close()
+
+	nicksArray := make([]string, 0, len(nicknames))
+
+	for rows.Next() {
+		var nick string
+		err := rows.Scan(&nick)
+		if err != nil {
+			panic(err)
+		}
+		nicksArray = append(nicksArray, nick)
+	}
+	return nicksArray
 }
 
 func (uc *UserService) GetUserByEmail(email string) *models.User {

@@ -27,31 +27,28 @@ func (ps *PostService) TableName() string {
 	return ps.tableName
 }
 
-func (ps *PostService) RequiredParents(posts []models.Post) map[uint64]uint64 {
+func (ps *PostService) RequiredParents(posts []models.Post) []uint64 {
 
-	parents := make(map[ParentThread]bool)
+	parents := make(map[uint64]bool)
 
 	for i := 0; i < len(posts); i++ {
-		pt := ParentThread{posts[i].Parent, posts[i].Thread}
-		parents[pt] = true
+		parents[posts[i].Parent] = true
 	}
 
 	for i := 0; i < len(posts); i++ {
 		for p := 0; p < len(posts); p++ {
-
 			if posts[i].Parent == posts[p].ID {
-				pt := ParentThread{posts[i].Parent, posts[i].Thread}
-				parents[pt] = false
+				parents[posts[i].Parent] = false
 			}
 
 		}
 	}
 
-	requiredParents := make(map[uint64]uint64)
+	requiredParents := make([]uint64, 0)
 
-	for pt, isRequired := range parents {
+	for id, isRequired := range parents {
 		if isRequired {
-			requiredParents[pt.ParentID] = pt.Thread
+			requiredParents = append(requiredParents, id)
 		}
 	}
 
@@ -128,6 +125,49 @@ func (ps *PostService) GetPostById(id uint64) *models.Post {
 	return nil
 }
 
+type uint64Array []uint64
+
+func (a uint64Array) String() (s string) {
+	sep := ""
+	for _, el := range a {
+		s += sep
+		sep = ", "
+		s += fmt.Sprintf("%d", el)
+	}
+	return
+}
+
+func (ps *PostService) GetPostsParentInfoByIdsArray(idArray []uint64) map[uint64]uint64 {
+
+	idToThread := make(map[uint64]uint64)
+
+	if len(idArray) == 0 {
+		return idToThread
+	}
+
+	query := "SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(idArray).String() + "]::BIGINT[]);"
+
+	// println(query)
+	rows := ps.db.Query(query)
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uint64
+		var thread uint64
+		err := rows.Scan(&id, &thread)
+		if err != nil {
+			fmt.Println("GetPostsParentInfoByIdsArray: error !")
+			panic(err)
+		}
+
+		idToThread[id] = thread
+		// fmt.Println(idToThread)
+	}
+
+	return idToThread
+}
+
+/*
 func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 
 	INSERT_QUERY :=
@@ -140,6 +180,8 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 		panic(err)
 	}
 
+	// fmt.Println("Created post id=", post.ID, ", parent = ", post.Parent)
+
 	insertQueryForumUsers :=
 		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;"
 
@@ -151,6 +193,52 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 	}
 
 	return true, post
+}
+*/
+
+func (ps *PostService) AddSomePosts(posts models.PostsArray) (bool, models.PostsArray) {
+
+	fmt.Print("(" /*, ps.db.DataBase().Stat()*/)
+	defer fmt.Print(")")
+
+	addedPostsArr := make(models.PostsArray, 0, len(posts))
+
+	tx, err := ps.db.DataBase().Begin()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tx.Prepare(
+		"insert_posts",
+		"insert into posts (created, message, parent, author, forum, thread) values ($1, $2, $3, $4, $5, $6) returning id;",
+	)
+	_, err = tx.Prepare(
+		"insert_forum_users",
+		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;",
+	)
+
+	for i := 0; i < len(posts); i++ {
+		post := posts[i]
+		//fmt.Print("-", i)
+		row := tx.QueryRow("insert_posts", post.Created, post.Message, post.Parent, post.Author, post.Forum, post.Thread)
+
+		err := row.Scan(&posts[i].ID)
+		if err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+		addedPostsArr = append(addedPostsArr, posts[i])
+	}
+
+	for i := 0; i < len(posts); i++ {
+		post := &posts[i]
+		//fmt.Print("-", i)
+		tx.Exec("insert_forum_users", post.Author, post.Forum)
+	}
+
+	tx.Commit()
+
+	return true, addedPostsArr
 }
 
 func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, desc bool) []models.Post {
