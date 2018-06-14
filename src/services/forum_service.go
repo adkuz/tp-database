@@ -176,7 +176,7 @@ func (fs *ForumService) AddUsers(nicknames []string, forumSlug string) {
 		panic(err)
 	}
 
-	fmt.Println("end: status = ", tx.Status())
+	// fmt.Println("end: status = ", tx.Status())
 	if tx.Status() != pgx.TxStatusCommitSuccess {
 		fmt.Println("==============================================================")
 	}

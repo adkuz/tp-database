@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	_ "fmt"
 	"net/http"
 	"strconv"
@@ -309,12 +308,12 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	//fmt.Println(parentsToThreads, expectedParentsIDArray, realParentToThread)
 
-	line := "[ "
-	for i := 0; i < len(postsArray); i++ {
-		line += fmt.Sprintf("{%d, %d} ", postsArray[i].Parent, postsArray[i].Thread)
-	}
-	line += "]"
-	fmt.Print(line)
+	// line := "[ "
+	// for i := 0; i < len(postsArray); i++ {
+	// 	line += fmt.Sprintf("{%d, %d} ", postsArray[i].Parent, postsArray[i].Thread)
+	// }
+	// line += "]"
+	// fmt.Print(line)
 
 	requiredAuthors := make(map[string]bool)
 	for i := 0; i < len(postsArray); i++ {
@@ -360,7 +359,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 			}
 		}
 	*/
-	fmt.Println(expectedParentsIDArray)
+	// fmt.Println(expectedParentsIDArray)
 
 	success, postsArray := PostService.AddSomePosts(postsArray, expectedParentsIDArray)
 	if !success {

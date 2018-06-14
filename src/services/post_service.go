@@ -198,8 +198,8 @@ func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
 
 func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []uint64) (bool, models.PostsArray) {
 
-	fmt.Print("(")
-	defer fmt.Print(")")
+	// fmt.Print("(")
+	// defer fmt.Print(")")
 
 	addedPostsArr := make(models.PostsArray, 0, len(posts))
 
@@ -214,15 +214,9 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 		"insert_posts",
 		"insert into posts (created, message, parent, author, forum, thread) values ($1, $2, $3, $4, $5, $6) returning id;",
 	)
-	/*
-		_, err = tx.Prepare(
-			"insert_forum_users",
-			"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;",
-		)
-	*/
 
 	if len(requiredParents) != 0 {
-		fmt.Println("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
+		// fmt.Println("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
 
 		rows, err := tx.Query("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
 		if err == nil {
@@ -241,7 +235,7 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 					return false, nil
 				}
 				anyResults = true
-				fmt.Printf(" %d->%d", id, thread)
+				// fmt.Printf(" %d->%d", id, thread)
 			}
 			if !anyResults {
 				tx.Rollback()
@@ -255,7 +249,7 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 	for i := 0; i < len(posts); i++ {
 		post := posts[i]
 		row := tx.QueryRow("insert_posts", post.Created, post.Message, post.Parent, post.Author, post.Forum, post.Thread)
-		fmt.Printf("on read: %d: status = %d", len(posts), tx.Status())
+		// fmt.Printf("on read: %d: status = %d", len(posts), tx.Status())
 		err := row.Scan(&posts[i].ID)
 		if err != nil {
 			tx.Rollback()
@@ -280,7 +274,7 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 		panic(err)
 	}
 
-	fmt.Println("end: status = ", tx.Status())
+	// fmt.Println("end: status = ", tx.Status())
 	if tx.Status() != pgx.TxStatusCommitSuccess {
 		fmt.Println("==============================================================")
 	}
