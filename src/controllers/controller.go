@@ -318,6 +318,11 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	requiredAuthors := make(map[string]bool)
 	for i := 0; i < len(postsArray); i++ {
+
+		postsArray[i].Created = timeMoment
+		postsArray[i].Thread = threadId
+		postsArray[i].Forum = forumSlug
+
 		if len(postsArray[i].Author) == 0 {
 			respWriter.WriteHeader(http.StatusNotFound)
 			writeJsonBody(&respWriter, resp.Message{"Null Author"})
@@ -326,7 +331,8 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		requiredAuthors[postsArray[i].Author] = true
 	}
 
-	if realAuthors := UserService.GetUsersByNicknamesArray(requiredAuthors); len(realAuthors) != len(requiredAuthors) {
+	realAuthors := UserService.GetUsersByNicknamesArray(requiredAuthors)
+	if len(realAuthors) != len(requiredAuthors) {
 		respWriter.WriteHeader(http.StatusNotFound)
 		writeJsonBody(&respWriter, resp.Message{"Author are not found"})
 		return
@@ -335,37 +341,36 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	//--------------------------------------------------------------
 
 	expectedParentsIDArray := PostService.RequiredParents(postsArray)
-	realParentIdToThread := PostService.GetPostsParentInfoByIdsArray(expectedParentsIDArray)
+	//realParentIdToThread := PostService.GetPostsParentInfoByIdsArray(expectedParentsIDArray)
 
-	if len(expectedParentsIDArray) != len(realParentIdToThread) {
+	/*
+		if len(expectedParentsIDArray) != len(realParentIdToThread) {
+			respWriter.WriteHeader(http.StatusConflict)
+			fmt.Println("~>", expectedParentsIDArray, " * ", realParentIdToThread)
+			msg := fmt.Sprintf("Parents are not found: expected: %d, have: %d", len(expectedParentsIDArray), len(realParentIdToThread))
+			writeJsonBody(&respWriter, resp.Message{msg})
+			return
+		}
+
+		for i := 0; i < len(postsArray); i++ {
+			if thread, ok := realParentIdToThread[postsArray[i].Parent]; ok && thread != threadId {
+				respWriter.WriteHeader(http.StatusConflict)
+				writeJsonBody(&respWriter, resp.Message{"Parent post was created in another thread"})
+				return
+			}
+		}
+	*/
+	fmt.Println(expectedParentsIDArray)
+
+	success, postsArray := PostService.AddSomePosts(postsArray, expectedParentsIDArray)
+	if !success {
 		respWriter.WriteHeader(http.StatusConflict)
-		fmt.Println("~>", expectedParentsIDArray, " * ", realParentIdToThread)
-		msg := fmt.Sprintf("Parents are not found: expected: %d, have: %d", len(expectedParentsIDArray), len(realParentIdToThread))
-		writeJsonBody(&respWriter, resp.Message{msg})
+		writeJsonBody(&respWriter, resp.Message{"Parent post was created in another thread, or not found"})
 		return
 	}
 
-	for i := 0; i < len(postsArray); i++ {
-		postsArray[i].Created = timeMoment
-		postsArray[i].Thread = threadId
-		postsArray[i].Forum = forumSlug
-
-		if thread, ok := realParentIdToThread[postsArray[i].Parent]; ok && thread != threadId {
-			respWriter.WriteHeader(http.StatusConflict)
-			writeJsonBody(&respWriter, resp.Message{"Parent post was created in another thread"})
-			return
-		}
-	}
-
-	_, postsArray = PostService.AddSomePosts(postsArray)
 	ForumService.IncrementPostsCountBySlug(thread.Forum, len(postsArray))
-
-	line = "->[ "
-	for i := 0; i < len(postsArray); i++ {
-		line += fmt.Sprintf("%d ", postsArray[i].ID)
-	}
-	line += "]"
-	fmt.Println(line)
+	ForumService.AddUsers(realAuthors, forumSlug)
 
 	respWriter.WriteHeader(http.StatusCreated)
 	writeJsonBody(&respWriter, postsArray)

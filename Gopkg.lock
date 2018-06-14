@@ -53,7 +53,7 @@
   branch = "master"
   name = "github.com/go-openapi/runtime"
   packages = ["."]
-  revision = "c0cae94704c76c8643896d8054080f91e920105b"
+  revision = "90c7afbb4bd8b22431e1c32d65caf405abf170c3"
 
 [[projects]]
   branch = "master"

@@ -150,3 +150,34 @@ func (fs *ForumService) IncrementPostsCountBySlug(forumSlug string, postsCount i
 		panic(err)
 	}
 }
+
+func (fs *ForumService) AddUsers(nicknames []string, forumSlug string) {
+
+	tx, err := fs.db.DataBase().Begin()
+	if err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+	_, err = tx.Prepare(
+		"insert_forum_users",
+		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;",
+	)
+
+	for i := 0; i < len(nicknames); i++ {
+		_, err := tx.Exec("insert_forum_users", nicknames[i], forumSlug)
+		if err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+
+	fmt.Println("end: status = ", tx.Status())
+	if tx.Status() != pgx.TxStatusCommitSuccess {
+		fmt.Println("==============================================================")
+	}
+}
