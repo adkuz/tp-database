@@ -18,17 +18,17 @@ app_run:
 func-test:
 	./${tester} func --wait=30 --keep -u http://localhost:5000/api/ -r tests/report.html
 
-func-test-no-k:
+func-test-no-keep:
 	./${tester} func --wait=50 -u http://localhost:5000/api/ -r tests/report.html
 
 fill-test:
 	./tests/tech-db-forum fill --timeout=900
 
 perform-test:
-	./tests/tech-db-forum perf --validate=0.2 --duration=60
+	./tests/tech-db-forum perf --duration=300 --step=60 --validate=0.2
 
 
-test_all: func-test fill-test perform-test
+test_all: func-test-no-keep fill-test perform-test
 
 
 

@@ -20,7 +20,7 @@
 vendor/**
 
 # Testing directory
-tests/*.html
+tests/**
 
 # Executable
 cmd/forum-server

@@ -229,40 +229,89 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 		addVoteStr = "- 1"
 	}
 
-	voice, voteId := ts.getVote(vote.Nickname, thread.ID)
+	tx, err := ts.db.DataBase().Begin()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tx.Prepare(
+		"get_vote",
+		"SELECT id, voice FROM votes WHERE lower(username) = lower($1) AND thread = $2;",
+	)
+
+	_, err = tx.Prepare(
+		"insert_vote",
+		"INSERT INTO votes (username, voice, thread) VALUES ($1, $2, $3) returning id;",
+	)
+
+	_, err = tx.Prepare(
+		"update_vote",
+		"UPDATE votes SET voice = $1 WHERE id = $2;",
+	)
+
+	voice := new(int32)
+	voteId := new(uint64)
+
+	rows, err := tx.Query("get_vote", vote.Nickname, thread.ID)
+	if err != nil {
+		tx.Rollback()
+		fmt.Println("Vote:  error:", err.Error())
+		panic(err)
+	}
+
+	if rows.Next() {
+		err := rows.Scan(voteId, voice)
+		if err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+	} else {
+		voice, voteId = nil, nil
+	}
+
+	rows.Close()
+
 	if voice != nil {
 		if *voice == vote.Voice {
 			return thread
-		} else {
-			voiceUpdate := "UPDATE votes SET voice = $1 WHERE id = $2;"
+		}
 
-			rows := ts.db.Query(voiceUpdate, vote.Voice, voteId)
-			defer rows.Close()
-			addVoteStr = "+ 2"
-			if vote.Voice == -1 {
-				addVoteStr = "- 2"
-			}
+		_, err := tx.Exec("update_vote", vote.Voice, *voteId)
+		if err != nil {
+			tx.Rollback()
+			fmt.Println("Vote:  error:", err.Error())
+			panic(err)
+		}
+
+		addVoteStr = "+ 2"
+		if vote.Voice == -1 {
+			addVoteStr = "- 2"
 		}
 	} else {
 
-		voteInsert := "INSERT INTO votes (username, voice, thread) VALUES ($1, $2, $3) returning id;"
-
 		var id uint64
-		err := ts.db.QueryRow(voteInsert, vote.Nickname, vote.Voice, thread.ID).Scan(&id)
+		err := tx.QueryRow("insert_vote", vote.Nickname, vote.Voice, thread.ID).Scan(&id)
 		if err != nil {
+			tx.Rollback()
 			fmt.Println("Vote:  error:", err.Error())
 			panic(err)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"UPDATE threads SET votes = votes %s WHERE id = %s returning votes;",
-		addVoteStr, strconv.FormatUint(thread.ID, 10))
-
-	err := ts.db.QueryRow(query).Scan(&thread.Votes)
+	err = tx.QueryRow("UPDATE threads SET votes = votes "+addVoteStr+" WHERE id = $1 returning votes;", thread.ID).Scan(&thread.Votes)
 	if err != nil {
+		tx.Rollback()
 		fmt.Println("Vote:  error:", err.Error())
 		panic(err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+
+	if tx.Status() != pgx.TxStatusCommitSuccess {
+		fmt.Println("==============================================================")
 	}
 
 	return thread
@@ -270,11 +319,9 @@ func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.T
 
 func (ts *ThreadService) getVote(username string, threadId uint64) (*int32, *uint64) {
 
-	query := fmt.Sprintf(
-		"SELECT id, voice FROM votes WHERE thread = %s AND lower(username) = lower('%s');",
-		strconv.FormatUint(threadId, 10), username)
+	query := "SELECT id, voice FROM votes WHERE lower(username) = lower($1) AND thread = $2;"
 
-	rows := ts.db.Query(query)
+	rows := ts.db.Query(query, username, threadId)
 	defer rows.Close()
 
 	for rows.Next() {

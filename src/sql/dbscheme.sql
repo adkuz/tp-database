@@ -16,7 +16,7 @@ drop index if exists treads_forum_created_idx;
 drop index if exists forums_slug_idx;
 drop index if exists forums_author_idx;
 
-drop index if exists users_slug_idx;
+drop index if exists users_email_idx;
 drop index if exists users_nickname_idx;
 
 
@@ -129,7 +129,7 @@ CREATE TABLE votes
   UNIQUE(username, thread)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(thread, lower(username));
+CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(lower(username), thread);
 
 
 CREATE TABLE forum_users
@@ -161,4 +161,3 @@ $fix_path$ LANGUAGE plpgsql;
 
 CREATE TRIGGER fix_path BEFORE INSERT OR UPDATE ON posts
   FOR EACH ROW EXECUTE PROCEDURE fix_path();
-

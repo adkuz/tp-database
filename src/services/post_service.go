@@ -167,35 +167,6 @@ func (ps *PostService) GetPostsParentInfoByIdsArray(idArray []uint64) map[uint64
 	return idToThread
 }
 
-/*
-func (ps *PostService) AddPost(post *models.Post) (bool, *models.Post) {
-
-	INSERT_QUERY :=
-		"insert into posts (created, message, parent, author, forum, thread) values ($1, $2, $3, $4, $5, $6) returning id;"
-
-	err := ps.db.QueryRow(INSERT_QUERY, post.Created, post.Message, post.Parent, post.Author, post.Forum, post.Thread).Scan(&post.ID)
-
-	if err != nil {
-		fmt.Println("AddPost:  error after id:", err.Error())
-		panic(err)
-	}
-
-	// fmt.Println("Created post id=", post.ID, ", parent = ", post.Parent)
-
-	insertQueryForumUsers :=
-		"insert into forum_users (forum, username) values ($2, $1) ON conflict (forum, username) do nothing;"
-
-	resultRows := ps.db.QueryRow(insertQueryForumUsers, post.Author, post.Forum)
-
-	if err := resultRows.Scan(); err != nil && err != pgx.ErrNoRows {
-		// TODO: move conflicts
-		panic(err)
-	}
-
-	return true, post
-}
-*/
-
 func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []uint64) (bool, models.PostsArray) {
 
 	// fmt.Print("(")
@@ -257,17 +228,6 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 		}
 		addedPostsArr = append(addedPostsArr, posts[i])
 	}
-
-	/*
-		for i := 0; i < len(posts); i++ {
-			post := &posts[i]
-			_, err := tx.Exec("insert_forum_users", post.Author, post.Forum)
-			if err != nil {
-				tx.Rollback()
-				panic(err)
-			}
-		}
-	*/
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()

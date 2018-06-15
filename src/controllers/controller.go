@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	_ "fmt"
 	"net/http"
 	"strconv"
@@ -306,15 +307,6 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	threadId = thread.ID
 	forumSlug := thread.Forum
 
-	//fmt.Println(parentsToThreads, expectedParentsIDArray, realParentToThread)
-
-	// line := "[ "
-	// for i := 0; i < len(postsArray); i++ {
-	// 	line += fmt.Sprintf("{%d, %d} ", postsArray[i].Parent, postsArray[i].Thread)
-	// }
-	// line += "]"
-	// fmt.Print(line)
-
 	requiredAuthors := make(map[string]bool)
 	for i := 0; i < len(postsArray); i++ {
 
@@ -337,30 +329,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//--------------------------------------------------------------
-
 	expectedParentsIDArray := PostService.RequiredParents(postsArray)
-	//realParentIdToThread := PostService.GetPostsParentInfoByIdsArray(expectedParentsIDArray)
-
-	/*
-		if len(expectedParentsIDArray) != len(realParentIdToThread) {
-			respWriter.WriteHeader(http.StatusConflict)
-			fmt.Println("~>", expectedParentsIDArray, " * ", realParentIdToThread)
-			msg := fmt.Sprintf("Parents are not found: expected: %d, have: %d", len(expectedParentsIDArray), len(realParentIdToThread))
-			writeJsonBody(&respWriter, resp.Message{msg})
-			return
-		}
-
-		for i := 0; i < len(postsArray); i++ {
-			if thread, ok := realParentIdToThread[postsArray[i].Parent]; ok && thread != threadId {
-				respWriter.WriteHeader(http.StatusConflict)
-				writeJsonBody(&respWriter, resp.Message{"Parent post was created in another thread"})
-				return
-			}
-		}
-	*/
-	// fmt.Println(expectedParentsIDArray)
-
 	success, postsArray := PostService.AddSomePosts(postsArray, expectedParentsIDArray)
 	if !success {
 		respWriter.WriteHeader(http.StatusConflict)
@@ -639,23 +608,24 @@ func ServiceStatus(respWriter http.ResponseWriter, request *http.Request) {
 func ServiceClear(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	drop := func(tablename string) uint64 {
+	drop := func(tablename string) {
+		fmt.Println("--start dropping " + tablename)
 
-		rows := UserService.GetDB().Query("TRUNCATE TABLE " + tablename)
+		rows, err := UserService.GetDB().DataBase().Query("DELETE FROM " + tablename + ";")
 		defer rows.Close()
-
-		for rows.Next() {
-			var count uint64
-			err := rows.Scan(&count)
-			if err != nil {
-				panic(err)
-			}
-			return count
+		if err != nil {
+			panic(err)
+		} else {
+			fmt.Println("++dropped " + tablename)
 		}
-		return 0
 	}
 
-	drop("users, forums, threads, posts, votes, forum_users")
+	drop("forum_users")
+	drop("posts")
+	drop("votes")
+	drop("threads")
+	drop("forums")
+	drop("users")
 
 	respWriter.WriteHeader(http.StatusOK)
 }
