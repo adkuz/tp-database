@@ -190,28 +190,28 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 		// fmt.Println("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
 
 		rows, err := tx.Query(
-			"SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);",
-			// treadId,
+			"SELECT id FROM posts WHERE thread = $1 AND id = ANY(ARRAY["+uint64Array(requiredParents).String()+"]::BIGINT[]);",
+			treadId,
 		)
 		if err == nil {
-			anyResults := false
+			resultsCount := 0
 			for rows.Next() {
-				var id, thread uint64
-				if rows.Scan(&id, &thread); err != nil {
+				var id uint64
+				if rows.Scan(&id); err != nil {
 					if err == pgx.ErrNoRows {
 						tx.Rollback()
 						return false, nil
 					}
 					panic(err)
 				}
-				if thread != treadId {
-					tx.Rollback()
-					return false, nil
-				}
-				anyResults = true
+				// if thread != treadId {
+				// 	tx.Rollback()
+				// 	return false, nil
+				// }
+				resultsCount++
 				// fmt.Printf(" %d->%d", id, thread)
 			}
-			if !anyResults {
+			if resultsCount < len(requiredParents) {
 				tx.Rollback()
 				return false, nil
 			}

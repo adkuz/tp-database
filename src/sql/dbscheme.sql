@@ -106,7 +106,7 @@ CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
 CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);
 CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(created, thread, id);
 
-CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(id, thread);
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread, id);
 CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --GetPostsFlat
 
 
