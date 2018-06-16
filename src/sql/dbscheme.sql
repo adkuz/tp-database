@@ -103,9 +103,15 @@ create table if not exists posts
   thread    bigint references threads(id)
 );
 
+-- root finding
 CREATE INDEX IF NOT EXISTS post_id_root_idx ON posts(id, (tree_path[1]));
 
 CREATE INDEX IF NOT EXISTS post_thread_parent_id_idx ON posts(thread, parent, id);
+
+-- for parent sort desc?
+CREATE INDEX IF NOT EXISTS post_root_path_id_parent_id_idx ON posts((tree_path[1]) DESC, tree_path, id);
+-- for parent sort asc?
+CREATE INDEX IF NOT EXISTS post_path_id_parent_id_idx ON posts(tree_path, id);
 
 CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
 CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);

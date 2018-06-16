@@ -313,11 +313,13 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since stri
 	return posts
 }
 
-func (ps *PostService) GetAllParents(threadId uint64, limit uint64, since string, desc bool) []uint64 {
+// Parent tree sort...
+
+func (ps *PostService) getAllParents(threadId uint64, limit uint64, since string, desc bool) string {
 
 	sinceStr := ""
 	if since != "" {
-		sinceStr = " AND tree_path[1] "
+		sinceStr = "AND tree_path[1] "
 		if desc {
 			sinceStr += "< "
 		} else {
@@ -326,50 +328,37 @@ func (ps *PostService) GetAllParents(threadId uint64, limit uint64, since string
 		sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
 	}
 
-	order := " ASC"
+	order := "ASC"
 	if desc {
-		order = " DESC"
+		order = "DESC"
 	}
 
 	limitStr := ""
 	if limit != 0 {
-		limitStr = " LIMIT " + strconv.FormatUint(limit, 10)
+		limitStr = "LIMIT " + strconv.FormatUint(limit, 10)
 	}
 
-	query := fmt.Sprintf(
-		"SELECT id FROM posts WHERE thread = %s AND parent = 0 %s ORDER BY id %s%s;",
-		strconv.FormatUint(threadId, 10), sinceStr, order, limitStr)
-
-	rows := ps.db.Query(query)
-	defer rows.Close()
-
-	parents := make([]uint64, 0)
-	for rows.Next() {
-		var id uint64
-
-		if err := rows.Scan(&id); err != nil {
-			fmt.Println(err)
-			panic(err)
-		}
-
-		parents = append(parents, id)
-	}
-
-	return parents
+	return fmt.Sprintf(
+		"SELECT id FROM posts WHERE thread = %s AND parent = 0 %s ORDER BY id %s %s",
+		strconv.FormatUint(threadId, 10),
+		sinceStr,
+		order,
+		limitStr,
+	)
 }
 
 func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, since string, desc bool) []models.Post {
 
-	sinceStr := ""
-	if since != "" {
-		sinceStr = " AND tree_path[1] "
-		if desc {
-			sinceStr += "< "
-		} else {
-			sinceStr += "> "
-		}
-		sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
-	}
+	// sinceStr := ""
+	// if since != "" {
+	// 	sinceStr = " AND tree_path[1] "
+	// 	if desc {
+	// 		sinceStr += "< "
+	// 	} else {
+	// 		sinceStr += "> "
+	// 	}
+	// 	sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
+	// }
 
 	var count uint64 = 0
 	if limit != "" {
@@ -380,43 +369,54 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, sinc
 		}
 	}
 
-	parents := ps.GetAllParents(thread.ID, count, since, desc)
+	// descStr := " ASC"
+	// if desc {
+	// 	descStr = " DESC"
+	// }
+
+	parentsQuery := ps.getAllParents(thread.ID, count, since, desc)
+
+	order := "tree_path, id"
+	if desc {
+		order = "tree_path[1] DESC, tree_path, id"
+	}
+	query := fmt.Sprintf(
+		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts "+
+			"WHERE tree_path[1] IN (%s) "+
+			"AND thread = %s ORDER BY %s;",
+		parentsQuery,
+		strconv.FormatUint(thread.ID, 10),
+		order,
+	)
+
+	/*
+		SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts WHERE tree_path[1] IN (SELECT id FROM posts WHERE thread = 149 AND parent = 0 AND tree_path[1] < (SELECT p.tree_path[1] FROM posts p WHERE p.id = 2666 ) ORDER BY id DESC LIMIT 3) AND thread = 149 ORDER BY tree_path[1] DESC, tree_path, id;
+	*/
+
+	// fmt.Println(query)
+
+	rows := ps.db.Query(query)
+	defer rows.Close()
 
 	posts := make([]models.Post, 0)
 
-	for i := 0; i < len(parents); i++ {
-
-		/*
-			three_path
-			three_path[1]
-			thread
-		*/
-
-		query := fmt.Sprintf(
-			"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts WHERE tree_path[1] = %s AND thread = %s%s ORDER BY tree_path, id;",
-			strconv.FormatUint(parents[i], 10), strconv.FormatUint(thread.ID, 10), sinceStr)
-
-		rows := ps.db.Query(query)
-
-		for rows.Next() {
-			var post models.Post
-			var selectedTime time.Time
-			err := rows.Scan(
-				&selectedTime,
-				&post.ID,
-				&post.Message,
-				&post.Parent,
-				&post.Author,
-				&post.Forum,
-				&post.Thread,
-			)
-			post.Created = selectedTime.UTC().Format(time.RFC3339Nano)
-			if err != nil {
-				panic(err)
-			}
-			posts = append(posts, post)
+	for rows.Next() {
+		var post models.Post
+		var selectedTime time.Time
+		err := rows.Scan(
+			&selectedTime,
+			&post.ID,
+			&post.Message,
+			&post.Parent,
+			&post.Author,
+			&post.Forum,
+			&post.Thread,
+		)
+		post.Created = selectedTime.UTC().Format(time.RFC3339Nano)
+		if err != nil {
+			panic(err)
 		}
-		rows.Close()
+		posts = append(posts, post)
 	}
 
 	return posts

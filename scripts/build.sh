@@ -13,3 +13,5 @@ if [[ ! -d 'vendor' ]]; then
 fi
 
 go build -o ${app} ${main}
+
+md5sum ${app}

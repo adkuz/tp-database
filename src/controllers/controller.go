@@ -355,6 +355,7 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	thread = ThreadService.Vote(thread, vote)
+	
 	respWriter.WriteHeader(http.StatusOK)
 	writeJSONBody(&respWriter, thread)
 }
