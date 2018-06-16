@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	_ "fmt"
 	"net/http"
 	"strconv"
@@ -18,6 +17,7 @@ import (
 	resp "github.com/Alex-Kuz/tp-database/src/utils/responses"
 )
 
+// services
 var (
 	UserService   services.UserService
 	ForumService  services.ForumService
@@ -25,12 +25,13 @@ var (
 	PostService   services.PostService
 )
 
+// methods
 const (
 	POST = "POST"
 	GET  = "GET"
 )
 
-func writeJsonBody(respWriter *http.ResponseWriter, v interface{}) {
+func writeJSONBody(respWriter *http.ResponseWriter, v interface{}) {
 	if err := json.NewEncoder(*respWriter).Encode(v); err != nil {
 		(*respWriter).WriteHeader(500)
 	}
@@ -52,10 +53,10 @@ func CreateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 	if scs {
 		respWriter.WriteHeader(http.StatusCreated)
-		writeJsonBody(&respWriter, user)
+		writeJSONBody(&respWriter, user)
 	} else {
 		respWriter.WriteHeader(http.StatusConflict)
-		writeJsonBody(&respWriter, usersArray)
+		writeJSONBody(&respWriter, usersArray)
 	}
 }
 
@@ -73,7 +74,7 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 		// fmt.Println("CreateForum:  authorId = nil")
 
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
+		writeJSONBody(&respWriter, resp.Message{"Forum master not found"})
 		return
 	}
 	forum.User = *authorNickname
@@ -82,10 +83,10 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 
 	if scs {
 		respWriter.WriteHeader(http.StatusCreated)
-		writeJsonBody(&respWriter, *conflictForum)
+		writeJSONBody(&respWriter, *conflictForum)
 	} else {
 		respWriter.WriteHeader(http.StatusConflict)
-		writeJsonBody(&respWriter, *conflictForum)
+		writeJSONBody(&respWriter, *conflictForum)
 	}
 }
 
@@ -98,10 +99,10 @@ func UserProfile(respWriter http.ResponseWriter, request *http.Request) {
 
 	if user != nil {
 		respWriter.WriteHeader(http.StatusOK)
-		writeJsonBody(&respWriter, *user)
+		writeJSONBody(&respWriter, *user)
 	} else {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.MsgCantFindUser(nickname))
+		writeJSONBody(&respWriter, resp.MsgCantFindUser(nickname))
 	}
 }
 
@@ -113,7 +114,7 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 	user := UserService.GetUserByNickname(nickname)
 	if user == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.MsgCantFindUser(nickname))
+		writeJSONBody(&respWriter, resp.MsgCantFindUser(nickname))
 		return
 	}
 
@@ -145,14 +146,14 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 	// Конфликт может возникнуть только по значению email
 	if opponent := UserService.GetUserByEmail(userInfo.Email); opponent != nil && *opponent != *user {
 		respWriter.WriteHeader(http.StatusConflict)
-		writeJsonBody(&respWriter, resp.Message{"User with this email already exists"})
+		writeJSONBody(&respWriter, resp.Message{"User with this email already exists"})
 		return
 	}
 
 	UserService.UpdateUser(&userInfo)
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, userInfo)
+	writeJSONBody(&respWriter, userInfo)
 
 }
 
@@ -164,14 +165,14 @@ func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 	forum := ForumService.GetForumBySlug(slug)
 	if forum == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		writeJSONBody(&respWriter, resp.Message{"Forum not found"})
 		return
 	}
 
 	forum.Posts = PostService.CountOnForum(forum)
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, *forum)
+	writeJSONBody(&respWriter, *forum)
 }
 
 func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
@@ -187,14 +188,14 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 
 	if author := UserService.GetUserByNickname(thread.Author); author == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Thread author not found"})
+		writeJSONBody(&respWriter, resp.Message{"Thread author not found"})
 		return
 	}
 
 	forumSlug := ForumService.SlugBySlug(thread.Forum)
 	if forumSlug == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		writeJSONBody(&respWriter, resp.Message{"Thread not found"})
 		return
 	}
 
@@ -203,7 +204,7 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	if thread.Slug != "" {
 		if anotherThread := ThreadService.GetThreadBySlug(thread.Slug); anotherThread != nil {
 			respWriter.WriteHeader(http.StatusConflict)
-			writeJsonBody(&respWriter, *anotherThread)
+			writeJSONBody(&respWriter, *anotherThread)
 			return
 		}
 	}
@@ -216,7 +217,7 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	ForumService.IncThreadsCountBySlug(slug)
 
 	respWriter.WriteHeader(http.StatusCreated)
-	writeJsonBody(&respWriter, thread)
+	writeJSONBody(&respWriter, thread)
 }
 
 func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
@@ -227,7 +228,7 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 	forum := ForumService.GetForumBySlug(slug)
 	if forum == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum master not found"})
+		writeJSONBody(&respWriter, resp.Message{"Forum master not found"})
 		return
 	}
 
@@ -247,7 +248,7 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 	_, threads := ThreadService.SelectThreads(slug, limit, since, desc)
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, threads)
+	writeJSONBody(&respWriter, threads)
 }
 
 func ThreadDetails(respWriter http.ResponseWriter, request *http.Request) {
@@ -265,12 +266,12 @@ func ThreadDetails(respWriter http.ResponseWriter, request *http.Request) {
 
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		writeJSONBody(&respWriter, resp.Message{"Forum not found"})
 		return
 	}
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, *thread)
+	writeJSONBody(&respWriter, *thread)
 }
 
 func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
@@ -288,7 +289,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		writeJSONBody(&respWriter, resp.Message{"Thread not found"})
 		return
 	}
 
@@ -299,7 +300,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	if len(postsArray) == 0 {
 		respWriter.WriteHeader(http.StatusCreated)
-		writeJsonBody(&respWriter, postsArray)
+		writeJSONBody(&respWriter, postsArray)
 		return
 	}
 
@@ -316,7 +317,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 
 		if len(postsArray[i].Author) == 0 {
 			respWriter.WriteHeader(http.StatusNotFound)
-			writeJsonBody(&respWriter, resp.Message{"Null Author"})
+			writeJSONBody(&respWriter, resp.Message{"Null Author"})
 			return
 		}
 		requiredAuthors[postsArray[i].Author] = true
@@ -325,7 +326,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	realAuthors := UserService.GetUsersByNicknamesArray(requiredAuthors)
 	if len(realAuthors) != len(requiredAuthors) {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Author are not found"})
+		writeJSONBody(&respWriter, resp.Message{"Author are not found"})
 		return
 	}
 
@@ -333,7 +334,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	success, postsArray := PostService.AddSomePosts(postsArray, expectedParentsIDArray)
 	if !success {
 		respWriter.WriteHeader(http.StatusConflict)
-		writeJsonBody(&respWriter, resp.Message{"Parent post was created in another thread, or not found"})
+		writeJSONBody(&respWriter, resp.Message{"Parent post was created in another thread, or not found"})
 		return
 	}
 
@@ -341,7 +342,7 @@ func CreatePosts(respWriter http.ResponseWriter, request *http.Request) {
 	ForumService.AddUsers(realAuthors, forumSlug)
 
 	respWriter.WriteHeader(http.StatusCreated)
-	writeJsonBody(&respWriter, postsArray)
+	writeJSONBody(&respWriter, postsArray)
 }
 
 func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
@@ -359,7 +360,7 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		writeJSONBody(&respWriter, resp.Message{"Thread not found"})
 		return
 	}
 
@@ -371,13 +372,13 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 	user := UserService.GetUserByNickname(vote.Nickname)
 	if user == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.MsgCantFindUser(vote.Nickname))
+		writeJSONBody(&respWriter, resp.MsgCantFindUser(vote.Nickname))
 		return
 	}
 
 	thread = ThreadService.Vote(thread, vote)
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, thread)
+	writeJSONBody(&respWriter, thread)
 }
 
 func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
@@ -395,7 +396,7 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Thread not found"})
+		writeJSONBody(&respWriter, resp.Message{"Thread not found"})
 		return
 	}
 
@@ -423,9 +424,10 @@ func ThreadPosts(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, posts)
+	writeJSONBody(&respWriter, posts)
 }
 
+// does not perf
 func ThreadUpdate(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -441,7 +443,7 @@ func ThreadUpdate(respWriter http.ResponseWriter, request *http.Request) {
 
 	if thread == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Forum not found"})
+		writeJSONBody(&respWriter, resp.Message{"Forum not found"})
 		return
 	}
 
@@ -462,7 +464,7 @@ func ThreadUpdate(respWriter http.ResponseWriter, request *http.Request) {
 	ThreadService.UpdateThread(thread)
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, *thread)
+	writeJSONBody(&respWriter, *thread)
 }
 
 func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
@@ -474,7 +476,7 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 
 	if forum == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"forum not found"})
+		writeJSONBody(&respWriter, resp.Message{"forum not found"})
 		return
 	}
 
@@ -494,7 +496,7 @@ func ForumUsers(respWriter http.ResponseWriter, request *http.Request) {
 	users := ForumService.GetUsers(forum, since, limit, desc)
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, users)
+	writeJSONBody(&respWriter, users)
 }
 
 func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
@@ -509,7 +511,7 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 
 	if post == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Post not found"})
+		writeJSONBody(&respWriter, resp.Message{"Post not found"})
 		return
 	}
 
@@ -542,9 +544,10 @@ func PostDetails(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, postInfo)
+	writeJSONBody(&respWriter, postInfo)
 }
 
+// does not perf
 func PostUpdate(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -557,7 +560,7 @@ func PostUpdate(respWriter http.ResponseWriter, request *http.Request) {
 
 	if post == nil {
 		respWriter.WriteHeader(http.StatusNotFound)
-		writeJsonBody(&respWriter, resp.Message{"Post not found"})
+		writeJSONBody(&respWriter, resp.Message{"Post not found"})
 		return
 	}
 
@@ -572,7 +575,7 @@ func PostUpdate(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, post)
+	writeJSONBody(&respWriter, post)
 }
 
 func ServiceStatus(respWriter http.ResponseWriter, request *http.Request) {
@@ -602,22 +605,22 @@ func ServiceStatus(respWriter http.ResponseWriter, request *http.Request) {
 	status["post"] = count(PostService.TableName())
 
 	respWriter.WriteHeader(http.StatusOK)
-	writeJsonBody(&respWriter, status)
+	writeJSONBody(&respWriter, status)
 }
 
 func ServiceClear(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	drop := func(tablename string) {
-		fmt.Println("--start dropping " + tablename)
+		// fmt.Println("--start dropping " + tablename)
 
 		rows, err := UserService.GetDB().DataBase().Query("DELETE FROM " + tablename + ";")
 		defer rows.Close()
 		if err != nil {
 			panic(err)
-		} else {
+		} /* else {
 			fmt.Println("++dropped " + tablename)
-		}
+		}*/
 	}
 
 	drop("forum_users")
