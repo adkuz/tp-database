@@ -77,9 +77,11 @@ CREATE TABLE threads
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
-
 CREATE INDEX IF NOT EXISTS treads_forum_idx ON threads(lower(forum));
+
 CREATE INDEX IF NOT EXISTS treads_forum_created_idx ON threads(lower(forum), created);
+CREATE INDEX IF NOT EXISTS treads_created_forum_idx ON threads(created, lower(forum));
+
 CREATE INDEX IF NOT EXISTS threads_author_idx ON threads(lower(author));
 
 
@@ -101,6 +103,9 @@ create table if not exists posts
   thread    bigint references threads(id)
 );
 
+CREATE INDEX IF NOT EXISTS post_id_root_idx ON posts(id, (tree_path[1]));
+
+CREATE INDEX IF NOT EXISTS post_thread_parent_id_idx ON posts(thread, parent, id);
 
 CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
 CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);

@@ -55,51 +55,6 @@ func (ps *PostService) RequiredParents(posts []models.Post) []uint64 {
 	return requiredParents
 }
 
-func (ps *PostService) GetAllParents(threadId uint64, limit uint64, since string, desc bool) []uint64 {
-
-	sinceStr := ""
-	if since != "" {
-		sinceStr = " AND tree_path[1] "
-		if desc {
-			sinceStr += "< "
-		} else {
-			sinceStr += "> "
-		}
-		sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
-	}
-
-	order := " ASC"
-	if desc {
-		order = " DESC"
-	}
-
-	limitStr := ""
-	if limit != 0 {
-		limitStr = " LIMIT " + strconv.FormatUint(limit, 10)
-	}
-
-	query := fmt.Sprintf(
-		"SELECT id FROM posts WHERE thread = %s AND parent = 0 %s ORDER BY id %s%s;",
-		strconv.FormatUint(threadId, 10), sinceStr, order, limitStr)
-
-	rows := ps.db.Query(query)
-	defer rows.Close()
-
-	parents := make([]uint64, 0)
-	for rows.Next() {
-		var id uint64
-
-		if err := rows.Scan(&id); err != nil {
-			fmt.Println(err)
-			panic(err)
-		}
-
-		parents = append(parents, id)
-	}
-
-	return parents
-}
-
 func (ps *PostService) GetPostById(id uint64) *models.Post {
 
 	query := "SELECT id, created, is_edited, parent, message::text, author::text, forum::text, thread, tree_path FROM posts WHERE id = $1;"
@@ -356,6 +311,51 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since stri
 		posts = append(posts, post)
 	}
 	return posts
+}
+
+func (ps *PostService) GetAllParents(threadId uint64, limit uint64, since string, desc bool) []uint64 {
+
+	sinceStr := ""
+	if since != "" {
+		sinceStr = " AND tree_path[1] "
+		if desc {
+			sinceStr += "< "
+		} else {
+			sinceStr += "> "
+		}
+		sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
+	}
+
+	order := " ASC"
+	if desc {
+		order = " DESC"
+	}
+
+	limitStr := ""
+	if limit != 0 {
+		limitStr = " LIMIT " + strconv.FormatUint(limit, 10)
+	}
+
+	query := fmt.Sprintf(
+		"SELECT id FROM posts WHERE thread = %s AND parent = 0 %s ORDER BY id %s%s;",
+		strconv.FormatUint(threadId, 10), sinceStr, order, limitStr)
+
+	rows := ps.db.Query(query)
+	defer rows.Close()
+
+	parents := make([]uint64, 0)
+	for rows.Next() {
+		var id uint64
+
+		if err := rows.Scan(&id); err != nil {
+			fmt.Println(err)
+			panic(err)
+		}
+
+		parents = append(parents, id)
+	}
+
+	return parents
 }
 
 func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, since string, desc bool) []models.Post {
