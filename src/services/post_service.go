@@ -189,7 +189,10 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 	if len(requiredParents) != 0 {
 		// fmt.Println("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
 
-		rows, err := tx.Query("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
+		rows, err := tx.Query(
+			"SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);",
+			// treadId,
+		)
 		if err == nil {
 			anyResults := false
 			for rows.Next() {

@@ -108,7 +108,7 @@ func (fs *ForumService) GetUsers(forum *models.Forum, since, limit string, desc 
 
 	query := fmt.Sprintf(
 		"SELECT nickname::text, fullname::text, about::text, email::text FROM users u JOIN forum_users uf ON LOWER(u.nickname) = LOWER(uf.username)"+
-			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(uf.username) %s %s;",
+			" WHERE LOWER(uf.forum) = LOWER('%s') %s ORDER BY LOWER(u.nickname) %s %s;",
 		forum.Slug, sinceStr, order, limitStr,
 	)
 

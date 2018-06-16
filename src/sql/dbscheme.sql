@@ -8,35 +8,25 @@ drop table if exists posts cascade;
 drop table if exists votes cascade;
 drop table if exists forum_users cascade;
 
-drop index if exists threads_slug_idx;
-drop index if exists threads_author_idx;
-drop index if exists treads_forum_idx;
-drop index if exists treads_forum_created_idx;
-
-drop index if exists forums_slug_idx;
-drop index if exists forums_author_idx;
-
-drop index if exists users_email_idx;
-drop index if exists users_nickname_idx;
 
 
-DROP INDEX IF EXISTS post_author_idx;
-DROP INDEX IF EXISTS post_forum_idx;
-DROP INDEX IF EXISTS post_thread_idx;
-DROP INDEX IF EXISTS post_created_idx;
-DROP INDEX IF EXISTS post_tree_parent_idx;
-DROP INDEX IF EXISTS post_thread_created_id_idx;
-DROP INDEX IF EXISTS post_created_thread_id_idx;
-DROP INDEX IF EXISTS post_id_thread_idx;
-DROP INDEX IF EXISTS post_thread_tree_path;
+CREATE OR REPLACE FUNCTION drop_all_indexes() RETURNS INTEGER AS $$
+DECLARE
+  i RECORD;
+BEGIN
+  FOR i IN 
+    (SELECT relname FROM pg_class
+       -- exclude all pkey, exclude system catalog which starts with 'pg_'
+      WHERE relkind = 'i' AND relname NOT LIKE '%_pkey%' AND relname NOT LIKE 'pg_%')
+  LOOP
+    -- RAISE INFO 'DROPING INDEX: %', i.relname;
+    EXECUTE 'DROP INDEX ' || i.relname;
+  END LOOP;
+RETURN 1;
+END;
+$$ LANGUAGE plpgsql;
 
-drop INDEX IF EXISTS votes_thread_username_idx;
-
-
-DROP INDEX IF EXISTS forum_users_forum_username_idx;
-DROP INDEX IF EXISTS forum_users_username_idx;
-DROP INDEX IF EXISTS forum_users_forum_idx;
-
+SELECT drop_all_indexes();
 
 
 CREATE TABLE IF NOT EXISTS users
@@ -47,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users
   about    TEXT DEFAULT '',
   fullname VARCHAR(96) DEFAULT ''
 );
+
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(lower(email));
 CREATE UNIQUE INDEX IF NOT EXISTS users_nickname_idx ON users(lower(nickname));
 
@@ -115,7 +106,7 @@ CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
 CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);
 CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(created, thread, id);
 
-CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread, id);
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(id, thread);
 CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --GetPostsFlat
 
 
