@@ -29,6 +29,31 @@ $$ LANGUAGE plpgsql;
 SELECT drop_all_indexes();
 
 
+DROP INDEX IF EXISTS users_email_idx;
+DROP INDEX IF EXISTS users_nickname_idx;
+DROP INDEX IF EXISTS forums_slug_idx;
+DROP INDEX IF EXISTS forums_author_idx;
+DROP INDEX IF EXISTS threads_slug_idx;
+DROP INDEX IF EXISTS treads_forum_idx;
+DROP INDEX IF EXISTS treads_forum_created_idx;
+DROP INDEX IF EXISTS treads_created_forum_idx;
+DROP INDEX IF EXISTS threads_author_idx;
+DROP INDEX IF EXISTS post_id_root_idx;
+DROP INDEX IF EXISTS post_root_path_id_parent_id_idx;
+DROP INDEX IF EXISTS post_path_id_parent_id_idx;
+DROP INDEX IF EXISTS post_thread_parent_path_id_idx;
+DROP INDEX IF EXISTS post_root_idx;
+DROP INDEX IF EXISTS post_thread_parent_id_idx;
+DROP INDEX IF EXISTS post_thread_path_id_idx;
+DROP INDEX IF EXISTS post_path_id_idx;
+DROP INDEX IF EXISTS post_thread_created_id_idx;
+DROP INDEX IF EXISTS post_thread_id_idx;
+DROP INDEX IF EXISTS votes_thread_username_idx;
+DROP INDEX IF EXISTS forum_users_forum_username_idx;
+DROP INDEX IF EXISTS forum_users_username_idx;
+DROP INDEX IF EXISTS forum_users_forum_idx;
+
+
 CREATE TABLE IF NOT EXISTS users
 (
   nickname VARCHAR(64) NOT NULL UNIQUE primary key,
@@ -106,19 +131,30 @@ create table if not exists posts
 -- root finding
 CREATE INDEX IF NOT EXISTS post_id_root_idx ON posts(id, (tree_path[1]));
 
-CREATE INDEX IF NOT EXISTS post_thread_parent_id_idx ON posts(thread, parent, id);
-
--- for parent sort desc?
+-- for parent_tree_sort desc?
 CREATE INDEX IF NOT EXISTS post_root_path_id_parent_id_idx ON posts((tree_path[1]) DESC, tree_path, id);
--- for parent sort asc?
+-- for parent_tree_sort asc?
 CREATE INDEX IF NOT EXISTS post_path_id_parent_id_idx ON posts(tree_path, id);
 
-CREATE INDEX IF NOT EXISTS post_tree_parent_idx ON posts((tree_path[1]));
-CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path, id);
-CREATE INDEX IF NOT EXISTS post_created_thread_id_idx ON posts(created, thread, id);
+-- parent_tree_sort: parent selection
+CREATE INDEX IF NOT EXISTS post_thread_parent_path_id_idx ON posts(thread, parent, tree_path);
 
-CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread, id);
-CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --GetPostsFlat
+-- root index in the thread
+CREATE INDEX IF NOT EXISTS post_root_idx ON posts(thread, (tree_path[1]));
+
+-- tree_sort: pre-selection
+CREATE INDEX IF NOT EXISTS post_thread_parent_id_idx ON posts(id, tree_path); --checked
+CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path);
+
+-- tree_sort: sort
+CREATE INDEX IF NOT EXISTS post_path_id_idx ON posts(tree_path, id);
+
+-- flat_sort: sort
+CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --checked
+
+-- thread finding
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread); -- checked
+
 
 
 CREATE TABLE votes
@@ -131,7 +167,7 @@ CREATE TABLE votes
   UNIQUE(username, thread)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(lower(username), thread);
+CREATE UNIQUE INDEX IF NOT EXISTS votes_thread_username_idx ON votes(thread, lower(username));
 
 
 CREATE TABLE forum_users

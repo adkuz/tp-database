@@ -224,8 +224,12 @@ func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, 
 	}
 
 	query := fmt.Sprintf(
-		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p WHERE p.thread = %s%s ORDER BY p.created %s, p.id %s%s;",
+		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p "+
+			"WHERE p.thread = %s%s ORDER BY p.created %s, p.id %s%s;",
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
+
+	// SELECT id, message::text thread FROM posts p WHERE p.thread = 17 ORDER BY p.created, p.id;
+	// SELECT id, message::textFROM posts p WHERE p.thread = 17 AND p.id < 1700 ORDER BY p.created DESC, p.id DESC;
 
 	rows := ps.db.Query(query)
 	defer rows.Close()
@@ -260,7 +264,7 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since stri
 
 	sinceStr := ""
 	if since != "" {
-		sinceStr = " AND p.tree_path "
+		sinceStr = "AND p.tree_path "
 		if desc {
 			sinceStr += "< "
 		} else {
@@ -271,19 +275,23 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since stri
 
 	order := ""
 	if desc {
-		order = " DESC"
+		order = "DESC"
 	}
 
 	limitStr := ""
 	if limit != "" {
-		limitStr = " LIMIT " + limit
+		limitStr = "LIMIT " + limit
 	}
 
 	query := fmt.Sprintf(
-		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p WHERE p.thread = %s%s ORDER BY p.tree_path %s, p.id %s%s;",
+		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p"+
+			" WHERE p.thread = %s %s ORDER BY p.tree_path %s, p.id %s %s;",
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
 
 	// fmt.Println("GetPostsTreeSort: QUERY:", query)
+
+	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path > (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path, p.id;
+	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path < (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path desc, p.id desc;
 
 	rows := ps.db.Query(query)
 	defer rows.Close()
