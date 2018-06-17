@@ -224,6 +224,31 @@ func (ts *ThreadService) GetThreadBySlug(slug string) *models.Thread {
 	return nil
 }
 
+func (ts *ThreadService) GetThreadIDBySlugOrId(slugOrID string) (uint64, bool) {
+
+	threadId, err := strconv.ParseUint(slugOrID, 10, 64)
+
+	var rows *pgx.Rows
+	if err == nil {
+		rows = ts.db.Query("SELECT id FROM threads WHERE id = $1;", threadId)
+	} else {
+		rows = ts.db.Query("SELECT id FROM threads WHERE lower(slug) = lower('$1');", slugOrID)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uint64
+		err := rows.Scan(&id)
+		if err != nil {
+			fmt.Println(err)
+			panic(err)
+		}
+		return id, true
+	}
+
+	return 0, false
+}
+
 func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 	query := fmt.Sprintf(

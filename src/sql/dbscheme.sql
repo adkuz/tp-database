@@ -32,6 +32,7 @@ SELECT drop_all_indexes();
 DROP INDEX IF EXISTS users_email_idx;
 DROP INDEX IF EXISTS users_nickname_idx;
 DROP INDEX IF EXISTS forums_slug_idx;
+DROP INDEX IF EXISTS forums_slug_threads_idx;
 DROP INDEX IF EXISTS forums_author_idx;
 DROP INDEX IF EXISTS threads_slug_idx;
 DROP INDEX IF EXISTS treads_forum_idx;
@@ -48,16 +49,15 @@ DROP INDEX IF EXISTS post_root_idx;
 DROP INDEX IF EXISTS post_thread_parent_id_idx;
 DROP INDEX IF EXISTS post_thread_path_id_idx;
 DROP INDEX IF EXISTS post_path_id_idx;
+DROP INDEX IF EXISTS post_thread_iddesc_idx;
+DROP INDEX IF EXISTS post_thread_id_idx;
+DROP INDEX IF EXISTS post_thread_created_id_idx;
 DROP INDEX IF EXISTS post_thread_created_id_idx;
 DROP INDEX IF EXISTS post_thread_id_idx;
 DROP INDEX IF EXISTS votes_thread_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_username_idx;
 DROP INDEX IF EXISTS forum_users_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_idx;
-
-
-DROP INDEX IF EXISTS post_thread_iddesc_idx;
-DROP INDEX IF EXISTS post_thread_id_idx;
 
 
 CREATE TABLE IF NOT EXISTS users
@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS forums
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS forums_slug_idx ON forums(lower(slug));
+CREATE INDEX IF NOT EXISTS forums_slug_threads_idx ON forums(lower(slug), threads);
 CREATE INDEX IF NOT EXISTS forums_author_idx ON forums(lower(author));
 
 
