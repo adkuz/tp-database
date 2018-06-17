@@ -35,9 +35,11 @@ DROP INDEX IF EXISTS forums_slug_idx;
 DROP INDEX IF EXISTS forums_author_idx;
 DROP INDEX IF EXISTS threads_slug_idx;
 DROP INDEX IF EXISTS treads_forum_idx;
+DROP INDEX IF EXISTS treads_created_idx;
 DROP INDEX IF EXISTS treads_forum_created_idx;
 DROP INDEX IF EXISTS treads_created_forum_idx;
 DROP INDEX IF EXISTS threads_author_idx;
+DROP INDEX IF EXISTS post_forum_idx;
 DROP INDEX IF EXISTS post_id_root_idx;
 DROP INDEX IF EXISTS post_root_path_id_parent_id_idx;
 DROP INDEX IF EXISTS post_path_id_parent_id_idx;
@@ -64,7 +66,7 @@ CREATE TABLE IF NOT EXISTS users
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users(lower(email));
-CREATE UNIQUE INDEX IF NOT EXISTS users_nickname_idx ON users(lower(nickname));
+CREATE UNIQUE INDEX IF NOT EXISTS users_nickname_idx ON users(lower(nickname)); --checked
 
 
 CREATE TABLE IF NOT EXISTS forums
@@ -104,6 +106,7 @@ CREATE TABLE threads
 CREATE UNIQUE INDEX IF NOT EXISTS threads_slug_idx ON threads(lower(slug));
 CREATE INDEX IF NOT EXISTS treads_forum_idx ON threads(lower(forum));
 
+CREATE INDEX IF NOT EXISTS treads_created_idx ON threads(created);
 CREATE INDEX IF NOT EXISTS treads_forum_created_idx ON threads(lower(forum), created);
 CREATE INDEX IF NOT EXISTS treads_created_forum_idx ON threads(created, lower(forum));
 
@@ -128,13 +131,16 @@ create table if not exists posts
   thread    bigint references threads(id)
 );
 
+-- forum found
+CREATE INDEX IF NOT EXISTS post_forum_idx ON posts(lower(forum));
+
 -- root finding
 CREATE INDEX IF NOT EXISTS post_id_root_idx ON posts(id, (tree_path[1]));
 
 -- for parent_tree_sort desc?
-CREATE INDEX IF NOT EXISTS post_root_path_id_parent_id_idx ON posts((tree_path[1]) DESC, tree_path, id);
+CREATE INDEX IF NOT EXISTS post_root_path_id_parent_id_idx ON posts((tree_path[1]) DESC, tree_path);
 -- for parent_tree_sort asc?
-CREATE INDEX IF NOT EXISTS post_path_id_parent_id_idx ON posts(tree_path, id);
+CREATE INDEX IF NOT EXISTS post_path_id_parent_id_idx ON posts(tree_path);
 
 -- parent_tree_sort: parent selection
 CREATE INDEX IF NOT EXISTS post_thread_parent_path_id_idx ON posts(thread, parent, tree_path);

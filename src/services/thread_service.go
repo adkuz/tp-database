@@ -87,7 +87,6 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 
 	limitStr := ""
 	if limit != "" {
-		// fmt.Println("SelectThreads: limit:", limit)
 		limitStr = "LIMIT " + limit
 	}
 
@@ -113,10 +112,11 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 	}
 
 	query := fmt.Sprintf(
-		"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM threads th WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
+		"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM threads th "+
+			"WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
 		slug, offsetStr, order, limitStr)
 
-	// fmt.Println("SelectThreads: query:", query)
+	// explain analyze SELECT id, title::text FROM threads th WHERE LOWER(th.forum) = LOWER('djeuwrfi2fr89r') AND th.created <= ORDER BY th.created DESC;
 
 	rows := ts.db.Query(query)
 	defer rows.Close()

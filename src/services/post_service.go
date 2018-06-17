@@ -92,40 +92,37 @@ func (a uint64Array) String() (s string) {
 	return
 }
 
-func (ps *PostService) GetPostsParentInfoByIdsArray(idArray []uint64) map[uint64]uint64 {
+// func (ps *PostService) GetPostsParentInfoByIdsArray(idArray []uint64) map[uint64]uint64 {
 
-	idToThread := make(map[uint64]uint64)
+// 	idToThread := make(map[uint64]uint64)
 
-	if len(idArray) == 0 {
-		return idToThread
-	}
+// 	if len(idArray) == 0 {
+// 		return idToThread
+// 	}
 
-	query := "SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(idArray).String() + "]::BIGINT[]);"
+// 	query := "SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(idArray).String() + "]::BIGINT[]);"
 
-	// println(query)
-	rows := ps.db.Query(query)
-	defer rows.Close()
+// 	// println(query)
+// 	rows := ps.db.Query(query)
+// 	defer rows.Close()
 
-	for rows.Next() {
-		var id uint64
-		var thread uint64
-		err := rows.Scan(&id, &thread)
-		if err != nil {
-			fmt.Println("GetPostsParentInfoByIdsArray: error !")
-			panic(err)
-		}
+// 	for rows.Next() {
+// 		var id uint64
+// 		var thread uint64
+// 		err := rows.Scan(&id, &thread)
+// 		if err != nil {
+// 			fmt.Println("GetPostsParentInfoByIdsArray: error !")
+// 			panic(err)
+// 		}
 
-		idToThread[id] = thread
-		// fmt.Println(idToThread)
-	}
+// 		idToThread[id] = thread
+// 		// fmt.Println(idToThread)
+// 	}
 
-	return idToThread
-}
+// 	return idToThread
+// }
 
 func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []uint64) (bool, models.PostsArray) {
-
-	// fmt.Print("(")
-	// defer fmt.Print(")")
 
 	addedPostsArr := make(models.PostsArray, 0, len(posts))
 
@@ -285,13 +282,13 @@ func (ps *PostService) GetPostsTreeSort(thread *models.Thread, limit, since stri
 
 	query := fmt.Sprintf(
 		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p"+
-			" WHERE p.thread = %s %s ORDER BY p.tree_path %s, p.id %s %s;",
-		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
+			" WHERE p.thread = %s %s ORDER BY p.tree_path %s %s;",
+		strconv.FormatUint(thread.ID, 10), sinceStr, order, limitStr)
 
 	// fmt.Println("GetPostsTreeSort: QUERY:", query)
 
-	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path > (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path, p.id;
-	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path < (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path desc, p.id desc;
+	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path > (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path;
+	// explain analyze SELECT id, message::text FROM posts p WHERE p.thread = 1500 AND  p.tree_path < (SELECT tree_path FROM posts p WHERE p.id = 359079) ORDER BY p.tree_path desc;
 
 	rows := ps.db.Query(query)
 	defer rows.Close()
@@ -384,9 +381,9 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, sinc
 
 	parentsQuery := ps.getAllParents(thread.ID, count, since, desc)
 
-	order := "tree_path, id"
+	order := "tree_path"
 	if desc {
-		order = "tree_path[1] DESC, tree_path, id"
+		order = "tree_path[1] DESC, tree_path"
 	}
 	query := fmt.Sprintf(
 		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts "+
@@ -444,6 +441,7 @@ func (ps *PostService) UpdatePost(post *models.Post) *models.Post {
 	return post
 }
 
+// ALARM
 func (ps *PostService) CountOnForum(forum *models.Forum) uint64 {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM posts WHERE LOWER(forum) = LOWER('%s');", forum.Slug)
 	rows := ps.db.Query(query)

@@ -68,6 +68,7 @@ func CreateForum(respWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// optimized with index
 func UserProfile(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -135,6 +136,7 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 }
 
+// 2 requests -> 1 req
 func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -153,6 +155,7 @@ func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 	writeJSONBody(&respWriter, *forum)
 }
 
+// need to opt
 func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -198,6 +201,7 @@ func CreateThread(respWriter http.ResponseWriter, request *http.Request) {
 	writeJSONBody(&respWriter, thread)
 }
 
+//  GetForumBySlug -> SelectThreads
 func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -355,7 +359,7 @@ func ThreadVote(respWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	thread = ThreadService.Vote(thread, vote)
-	
+
 	respWriter.WriteHeader(http.StatusOK)
 	writeJSONBody(&respWriter, thread)
 }
