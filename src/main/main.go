@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 
 	"github.com/Alex-Kuz/tp-database/src/controllers"
@@ -74,6 +75,8 @@ func readConfig(dbLine *string) services.Config {
 }
 
 func init() {
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	fmt.Println("Connecting to database server...")
 
