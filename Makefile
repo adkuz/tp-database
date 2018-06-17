@@ -25,7 +25,7 @@ fill-test:
 	./tests/tech-db-forum fill --timeout=900
 
 perform-test:
-	./tests/tech-db-forum perf --duration=300 --step=60 --validate=0.2
+	./tests/tech-db-forum perf --duration=600 --step=60
 
 
 test_all: func-test-no-keep fill-test perform-test
@@ -47,10 +47,10 @@ docker:
 	docker build -t ${docker_name}:${docker_tag} -f Dockerfile ./
 
 run:
-	docker run -p 5000:5000 --rm -d -it --name ${container_name} ${docker_name}:${docker_tag}
+	docker run --memory 1G --log-opt max-size=1M --log-opt max-file=3 -p 5000:5000 --rm -d -it --name ${container_name} ${docker_name}:${docker_tag}
 
 run-no-d:
-	docker run -p 5000:5000 --rm -it --name ${container_name} ${docker_name}:${docker_tag}
+	docker run --memory 1G --log-opt max-size=1M --log-opt max-file=3 -p 5000:5000 --rm -it --name ${container_name} ${docker_name}:${docker_tag}
 
 Nolan:
 	docker exec -it ${container_name} bash
