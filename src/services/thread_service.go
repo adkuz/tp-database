@@ -85,18 +85,18 @@ func (ts *ThreadService) UpdateThread(thread *models.Thread) *models.Thread {
 
 func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bool, []models.Thread) {
 
-	limitStr := ""
+	limitEndStr := "offsetStr+order+limitEndStr,"
 	if limit != "" {
-		limitStr = "LIMIT " + limit
+		limitEndStr = " LIMIT " + limit + ""
 	}
 
 	comp := " >= "
 	order := "ORDER BY th.created "
 	if desc {
 		comp = " <= "
-		order += "DESC "
+		order += " DESC "
 	} else {
-		order += "ASC "
+		order += " ASC "
 	}
 
 	offsetStr := ""
@@ -105,23 +105,56 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		if err != nil {
 			fmt.Println(err)
 		}
-
 		since = t.UTC().Format(time.RFC3339Nano)
 		// fmt.Println("SelectThreads: since:", since)
-		offsetStr = "AND th.created " + comp + " '" + since + "'"
+		offsetStr = " AND th.created " + comp + " '" + since + "'"
 	}
 
-	query := fmt.Sprintf(
-		"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM threads th "+
-			"WHERE LOWER(th.forum) = LOWER('%s') %s %s %s;",
-		slug, offsetStr, order, limitStr)
+	tx, err := ts.db.DataBase().Begin()
+	if err != nil {
+		panic(err)
+	}
 
-	// explain analyze SELECT id, title::text FROM threads th WHERE LOWER(th.forum) = LOWER('djeuwrfi2fr89r') AND th.created <= ORDER BY th.created DESC;
+	forumExists := false
+	var threadsCount uint64
+	rows, err := tx.Query("SELECT slug::text, threads FROM forums WHERE LOWER(slug) = LOWER($1);", slug)
+	if err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+	if rows.Next() {
+		var foundSlug string
+		if err := rows.Scan(&foundSlug, &threadsCount); err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+		// fmt.Println("get_forum_slug_threads: threads:", threads)
+		forumExists = true
+	}
 
-	rows := ts.db.Query(query)
+	rows.Close()
+
+	if !forumExists {
+		tx.Commit()
+		return false, nil
+	}
+
+	rows, err = tx.Query(
+		fmt.Sprintf(
+			"SELECT id, coalesce(slug::text, ''), author::text, forum::text, created, title::text, message::text, votes FROM threads th WHERE LOWER(th.forum) = LOWER($1) %s %s %s;",
+			offsetStr,
+			order,
+			limitEndStr,
+		),
+		slug,
+	)
 	defer rows.Close()
+	if err != nil {
+		tx.Rollback()
+		panic(err)
+	}
 
-	threads := make([]models.Thread, 0)
+	threads := make([]models.Thread, 0, threadsCount)
 
 	for rows.Next() {
 		var thread models.Thread
@@ -138,13 +171,16 @@ func (ts *ThreadService) SelectThreads(slug, limit, since string, desc bool) (bo
 		)
 		thread.Created = selectedTime.UTC().Format(time.RFC3339Nano)
 		if err != nil {
+			tx.Rollback()
 			panic(err)
 		}
 		threads = append(threads, thread)
 	}
 
+	tx.Commit()
+
 	if len(threads) == 0 {
-		return false, threads
+		return true, threads
 	}
 
 	return true, threads

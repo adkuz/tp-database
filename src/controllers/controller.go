@@ -208,12 +208,12 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 
 	slug := mux.Vars(request)["slug"]
 
-	forum := ForumService.GetForumBySlug(slug)
-	if forum == nil {
-		respWriter.WriteHeader(http.StatusNotFound)
-		writeJSONBody(&respWriter, resp.Message{"Forum master not found"})
-		return
-	}
+	// forum := ForumService.GetForumBySlug(slug)
+	// if forum == nil {
+	// 	respWriter.WriteHeader(http.StatusNotFound)
+	// 	writeJSONBody(&respWriter, resp.Message{"Forum master not found"})
+	// 	return
+	// }
 
 	limit := request.URL.Query().Get("limit")
 	since := request.URL.Query().Get("since")
@@ -228,7 +228,13 @@ func ForumThreads(respWriter http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	_, threads := ThreadService.SelectThreads(slug, limit, since, desc)
+	forumExists, threads := ThreadService.SelectThreads(slug, limit, since, desc)
+
+	if !forumExists {
+		respWriter.WriteHeader(http.StatusNotFound)
+		writeJSONBody(&respWriter, resp.Message{"Forum not found"})
+		return
+	}
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJSONBody(&respWriter, threads)
