@@ -424,19 +424,19 @@ func (ps *PostService) UpdatePost(post *models.Post) *models.Post {
 }
 
 // ALARM
-func (ps *PostService) CountOnForum(forum *models.Forum) uint64 {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM posts WHERE LOWER(forum) = LOWER('%s');", forum.Slug)
-	rows := ps.db.Query(query)
-	defer rows.Close()
+// func (ps *PostService) CountOnForum(forum *models.Forum) uint64 {
+// 	query := fmt.Sprintf("SELECT COUNT(*) FROM posts WHERE LOWER(forum) = LOWER('%s');", forum.Slug)
+// 	rows := ps.db.Query(query)
+// 	defer rows.Close()
 
-	var count uint64 = 0
+// 	var count uint64 = 0
 
-	for rows.Next() {
-		if err := rows.Scan(&count); err != nil {
-			fmt.Println(err)
-			panic(err)
-		}
-	}
+// 	for rows.Next() {
+// 		if err := rows.Scan(&count); err != nil {
+// 			fmt.Println(err)
+// 			panic(err)
+// 		}
+// 	}
 
-	return count
-}
+// 	return count
+// }
