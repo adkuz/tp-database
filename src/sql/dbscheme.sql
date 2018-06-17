@@ -56,6 +56,10 @@ DROP INDEX IF EXISTS forum_users_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_idx;
 
 
+DROP INDEX IF EXISTS post_thread_iddesc_idx;
+DROP INDEX IF EXISTS post_thread_id_idx;
+
+
 CREATE TABLE IF NOT EXISTS users
 (
   nickname VARCHAR(64) NOT NULL UNIQUE primary key,
@@ -155,8 +159,12 @@ CREATE INDEX IF NOT EXISTS post_thread_path_id_idx ON posts(thread, tree_path);
 -- tree_sort: sort
 CREATE INDEX IF NOT EXISTS post_path_id_idx ON posts(tree_path, id);
 
--- flat_sort: sort
-CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id); --checked
+-- flat_sort:
+CREATE INDEX IF NOT EXISTS post_thread_iddesc_idx ON posts(thread, id DESC); --checked
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread, id);
+CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created, id);
+CREATE INDEX IF NOT EXISTS post_thread_created_id_idx ON posts(thread, created DESC, id DESC); 
+
 
 -- thread finding
 CREATE INDEX IF NOT EXISTS post_thread_id_idx ON posts(thread); -- checked

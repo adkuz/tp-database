@@ -136,7 +136,7 @@ func UpdateUser(respWriter http.ResponseWriter, request *http.Request) {
 
 }
 
-// 2 requests -> 1 req
+// optimized?
 func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 	respWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -149,7 +149,8 @@ func ForumDetails(respWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	forum.Posts = PostService.CountOnForum(forum)
+	// OMG really?
+	// forum.Posts = PostService.CountOnForum(forum)
 
 	respWriter.WriteHeader(http.StatusOK)
 	writeJSONBody(&respWriter, *forum)

@@ -226,7 +226,7 @@ func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, 
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
 
 	// SELECT id, message::text thread FROM posts p WHERE p.thread = 17 ORDER BY p.created, p.id;
-	// SELECT id, message::textFROM posts p WHERE p.thread = 17 AND p.id < 1700 ORDER BY p.created DESC, p.id DESC;
+	// SELECT id, message::text FROM posts p WHERE p.thread = 17 AND p.id < 1700 ORDER BY p.created DESC, p.id DESC;
 
 	rows := ps.db.Query(query)
 	defer rows.Close()
@@ -354,17 +354,6 @@ func (ps *PostService) getAllParents(threadId uint64, limit uint64, since string
 
 func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, since string, desc bool) []models.Post {
 
-	// sinceStr := ""
-	// if since != "" {
-	// 	sinceStr = " AND tree_path[1] "
-	// 	if desc {
-	// 		sinceStr += "< "
-	// 	} else {
-	// 		sinceStr += "> "
-	// 	}
-	// 	sinceStr += "(SELECT p.tree_path[1] FROM posts p WHERE p.id = " + since + " )"
-	// }
-
 	var count uint64 = 0
 	if limit != "" {
 		var err error
@@ -374,11 +363,6 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, sinc
 		}
 	}
 
-	// descStr := " ASC"
-	// if desc {
-	// 	descStr = " DESC"
-	// }
-
 	parentsQuery := ps.getAllParents(thread.ID, count, since, desc)
 
 	order := "tree_path"
@@ -386,9 +370,7 @@ func (ps *PostService) GetPostsParentTreeSort(thread *models.Thread, limit, sinc
 		order = "tree_path[1] DESC, tree_path"
 	}
 	query := fmt.Sprintf(
-		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts "+
-			"WHERE tree_path[1] IN (%s) "+
-			"AND thread = %s ORDER BY %s;",
+		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts WHERE tree_path[1] IN (%s) AND thread = %s ORDER BY %s;",
 		parentsQuery,
 		strconv.FormatUint(thread.ID, 10),
 		order,

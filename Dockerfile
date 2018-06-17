@@ -60,18 +60,18 @@ USER root
 
 EXPOSE 5000
 
+ENV GO_DEEP "psql -U docker -h 127.0.0.1 -d forum_tp"
+
 WORKDIR $GOPATH/src/github.com/Alex-Kuz/tp-database
 ADD . $GOPATH/src/github.com/Alex-Kuz/tp-database/
-
-
-ENV GO_DEEP "psql -U docker -h 127.0.0.1 -d forum_tp"
 
 RUN chmod +x ./scripts/*
 
 RUN ./scripts/build.sh
 
-
 RUN tree -L 3 ./
+
+RUN md5sum server.app
 
 # Main command
 ENTRYPOINT ["./scripts/start_in_docker.sh"]
