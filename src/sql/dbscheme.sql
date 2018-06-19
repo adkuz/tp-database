@@ -56,6 +56,7 @@ DROP INDEX IF EXISTS post_thread_created_id_idx;
 DROP INDEX IF EXISTS post_thread_id_idx;
 DROP INDEX IF EXISTS votes_thread_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_username_idx;
+DROP INDEX IF EXISTS forum_users_username_forum_idx;
 DROP INDEX IF EXISTS forum_users_username_idx;
 DROP INDEX IF EXISTS forum_users_forum_idx;
 
@@ -194,6 +195,8 @@ CREATE TABLE forum_users
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS forum_users_forum_username_idx ON forum_users(lower(forum), lower(username));
+CREATE UNIQUE INDEX IF NOT EXISTS forum_users_username_forum_idx ON forum_users(lower(username), lower(forum));
+
 CREATE INDEX IF NOT EXISTS forum_users_username_idx ON forum_users(lower(username));
 CREATE INDEX IF NOT EXISTS forum_users_forum_idx ON forum_users(lower(forum));
 
