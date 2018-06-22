@@ -30,21 +30,25 @@ func (ps *PostService) TableName() string {
 func (ps *PostService) RequiredParents(posts []models.Post) []uint64 {
 
 	parents := make(map[uint64]bool)
+	requiredParents := make([]uint64, 0, len(posts))
 
 	for i := 0; i < len(posts); i++ {
 		parents[posts[i].Parent] = true
 	}
 
-	for i := 0; i < len(posts); i++ {
-		for p := 0; p < len(posts); p++ {
-			if posts[i].Parent == posts[p].ID {
-				parents[posts[i].Parent] = false
+	/*
+		for i := 0; i < len(posts); i++ {
+			for p := 0; p < len(posts); p++ {
+				if posts[i].Parent == posts[p].ID {
+					// fmt.Println("posts[i].Parent == posts[p].ID: ", posts[i].Parent, posts[p].ID)
+					parents[posts[i].Parent] = false
+				}
+
 			}
-
 		}
-	}
+	*/
 
-	requiredParents := make([]uint64, 0)
+	parents[0] = false
 
 	for id, isRequired := range parents {
 		if isRequired {
