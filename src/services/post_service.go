@@ -36,18 +36,6 @@ func (ps *PostService) RequiredParents(posts []models.Post) []uint64 {
 		parents[posts[i].Parent] = true
 	}
 
-	/*
-		for i := 0; i < len(posts); i++ {
-			for p := 0; p < len(posts); p++ {
-				if posts[i].Parent == posts[p].ID {
-					// fmt.Println("posts[i].Parent == posts[p].ID: ", posts[i].Parent, posts[p].ID)
-					parents[posts[i].Parent] = false
-				}
-
-			}
-		}
-	*/
-
 	parents[0] = false
 
 	for id, isRequired := range parents {
@@ -96,36 +84,6 @@ func (a uint64Array) String() (s string) {
 	return
 }
 
-// func (ps *PostService) GetPostsParentInfoByIdsArray(idArray []uint64) map[uint64]uint64 {
-
-// 	idToThread := make(map[uint64]uint64)
-
-// 	if len(idArray) == 0 {
-// 		return idToThread
-// 	}
-
-// 	query := "SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(idArray).String() + "]::BIGINT[]);"
-
-// 	// println(query)
-// 	rows := ps.db.Query(query)
-// 	defer rows.Close()
-
-// 	for rows.Next() {
-// 		var id uint64
-// 		var thread uint64
-// 		err := rows.Scan(&id, &thread)
-// 		if err != nil {
-// 			fmt.Println("GetPostsParentInfoByIdsArray: error !")
-// 			panic(err)
-// 		}
-
-// 		idToThread[id] = thread
-// 		// fmt.Println(idToThread)
-// 	}
-
-// 	return idToThread
-// }
-
 func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []uint64) (bool, models.PostsArray) {
 
 	addedPostsArr := make(models.PostsArray, 0, len(posts))
@@ -143,7 +101,6 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 	)
 
 	if len(requiredParents) != 0 {
-		// fmt.Println("SELECT id, thread FROM posts WHERE id = ANY(ARRAY[" + uint64Array(requiredParents).String() + "]::BIGINT[]);")
 
 		rows, err := tx.Query(
 			"SELECT id FROM posts WHERE thread = $1 AND id = ANY(ARRAY["+uint64Array(requiredParents).String()+"]::BIGINT[]);",
@@ -160,12 +117,8 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 					}
 					panic(err)
 				}
-				// if thread != treadId {
-				// 	tx.Rollback()
-				// 	return false, nil
-				// }
+
 				resultsCount++
-				// fmt.Printf(" %d->%d", id, thread)
 			}
 			if resultsCount < len(requiredParents) {
 				tx.Rollback()
@@ -179,7 +132,6 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 	for i := 0; i < len(posts); i++ {
 		post := posts[i]
 		row := tx.QueryRow("insert_posts", post.Created, post.Message, post.Parent, post.Author, post.Forum, post.Thread)
-		// fmt.Printf("on read: %d: status = %d", len(posts), tx.Status())
 		err := row.Scan(&posts[i].ID)
 		if err != nil {
 			tx.Rollback()
@@ -193,7 +145,6 @@ func (ps *PostService) AddSomePosts(posts models.PostsArray, requiredParents []u
 		panic(err)
 	}
 
-	// fmt.Println("end: status = ", tx.Status())
 	if tx.Status() != pgx.TxStatusCommitSuccess {
 		fmt.Println("==============================================================")
 	}
@@ -228,9 +179,6 @@ func (ps *PostService) GetPostsFlat(thread *models.Thread, limit, since string, 
 		"SELECT created, id, message::text, parent, author::text, forum::text, thread FROM posts p "+
 			"WHERE p.thread = %s%s ORDER BY p.created %s, p.id %s%s;",
 		strconv.FormatUint(thread.ID, 10), sinceStr, order, order, limitStr)
-
-	// SELECT id, message::text thread FROM posts p WHERE p.thread = 17 ORDER BY p.created, p.id;
-	// SELECT id, message::text FROM posts p WHERE p.thread = 17 AND p.id < 1700 ORDER BY p.created DESC, p.id DESC;
 
 	rows := ps.db.Query(query)
 	defer rows.Close()

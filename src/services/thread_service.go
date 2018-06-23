@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/Alex-Kuz/tp-database/src/models"
+	utils "github.com/Alex-Kuz/tp-database/src/utils"
+
 	"github.com/jackc/pgx"
 )
 
@@ -285,10 +287,12 @@ func (ts *ThreadService) GetThreadById(id uint64) *models.Thread {
 
 func (ts *ThreadService) Vote(thread *models.Thread, vote models.Vote) *models.Thread {
 
-	addVoteStr := "+ 1"
-	if vote.Voice == -1 {
-		addVoteStr = "- 1"
-	}
+	// addVoteStr := "+ 1"
+	// if vote.Voice == -1 {
+	// 	addVoteStr = "- 1"
+	// }
+
+	addVoteStr := utils.SwitchString(vote.Voice == -1, "- 1", "+ 1")
 
 	tx, err := ts.db.DataBase().Begin()
 	if err != nil {

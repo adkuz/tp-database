@@ -2,45 +2,19 @@ package models
 
 import (
 	"github.com/go-openapi/swag"
-	"github.com/goware/emailx"
 )
-
-type ValidError int
-
-const (
-	ALL_RIGHT ValidError = iota
-	INVALID_EMAIL
-	INVALID_NICKNAME
-	NIL_USER
-)
-
 
 type User struct {
+	About string `json:"about"`
 
-	About    string `json:"about" db:"about"`
+	Email string `json:"email"`
 
-	Email    string `json:"email" db:"email"`
+	Fullname string `json:"fullname"`
 
-	Fullname string `json:"fullname" db:"fullname"`
-
-	Nickname string `json:"nickname" db:"nickname"`
+	Nickname string `json:"nickname"`
 }
 
 type UsersArray []User
-
-
-func IsValid(user *User) ValidError {
-	if user == nil {
-		return NIL_USER
-	}
-
-	if err := emailx.Validate((*user).Email); err != nil {
-		return INVALID_EMAIL
-	}
-
-	return ALL_RIGHT
-}
-
 
 // MarshalBinary interface implementation
 func (m *User) MarshalBinary() ([]byte, error) {
