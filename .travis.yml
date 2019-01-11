@@ -12,8 +12,6 @@ install:
 script:
   - sleep 30
   - make func-test
-  - make fill-test
-  - make perform-test
 
 after_script:
   - make stop
